@@ -1,0 +1,266 @@
+/* DynamicActivityForm css */
+
+.main-panel > .content {
+    padding: 30px 15px;
+}
+
+.localmarker_icon {
+    position: absolute;
+    margin: 10px;
+    right: 0;
+}
+
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1em;
+    border: 0px solid #ccc;
+    border-radius: 0px;
+    background-color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+.form-container .title {
+    margin: 0 0 20px 0;
+}
+
+.form-container h3 {
+    color: #333;
+    text-align: center;
+    font-weight: bold;
+    margin: 0 0 5px;
+}
+
+.form-container h5 {
+    margin: 0;
+    text-align: center;
+    font-size: 0.8rem;
+}
+  
+.form-container h6 {
+    font-size: 0.7rem;
+    text-align: center;
+    text-transform: none;
+    font-weight: 100;
+}
+  
+.date-selection,
+  label {
+    font-weight: bold;
+  }
+  
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  button {
+    padding: 0.5em;
+    margin: 0.5em 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  button {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+  }
+  
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .date-box fieldset {
+    border: none;
+    border-top: 1px solid #4caf50;
+    border-bottom: 1px solid #4caf50;
+    border-radius: 0;
+  }
+  
+  .date-box > div {
+    width: 100%
+  }
+  
+  .date-box input {
+    border: none;
+    padding: 0;
+    text-align: center;
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #4caf50;
+    cursor: pointer;
+  }
+  
+  .date-box fieldset:hover {
+    border: none;
+  }
+  
+  .date-selection {
+    display: flex;
+    justify-content: center;
+    gap: 2em;
+  }
+  
+  .date-control {
+    font-family: system-ui, sans-serif;
+    font-size: 1.5rem;
+    font-weight: normal;
+    color: #8a8a8a;
+    line-height: 1.1;
+    display: flex;
+    gap: 0.3em;
+    margin-top: 0.7em;
+  }
+  
+  input[type="radio"] {
+    /* Add if not using autoprefixer */
+    -webkit-appearance: none;
+    appearance: none;
+    /* For iOS < 15 to remove gradient background */
+    background-color: #fff;
+    /* Not removed via appearance */
+    margin: 0;
+  
+    font: inherit;
+    color: currentColor;
+    width: 1.15em;
+    height: 1.15em;
+    border: 0.15em solid currentColor;
+    border-radius: 50%;
+    transform: translateY(-0.075em);
+  
+    display: grid;
+    place-content: center;
+  }
+  
+  input[type="radio"]::before {
+    content: "";
+    width: 0.65em;
+    height: 0.65em;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em #4CAF50;
+  }
+  
+  input[type="radio"]:checked::before {
+    transform: scale(1);
+  }
+  
+  
+  
+  .list-box {
+    margin: 1em 0 2.5em;
+  }
+  
+  .list-box input[type="text"] {
+    margin: 0;
+    border: 0;
+  }
+  
+  .list-item {
+    display: flex;
+    flex-direction: row;
+  }
+  
+  .form-control {
+    font-family: system-ui, sans-serif;
+    font-size: 1.2rem;
+    font-weight: bold;
+    line-height: 1.1;
+    /*display: grid;
+    grid-template-columns: 90% auto;
+    gap: 0.5em;*/
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5em;
+    margin-right: 0.5em;
+    width: 96%;
+  }
+  
+  .form-control:last-of-type {
+    margin-bottom: 0.5em;
+  }
+  
+  input[type="checkbox"] {
+    /* Add if not using autoprefixer */
+    -webkit-appearance: none;
+    appearance: none;
+    /* For iOS < 15 to remove gradient background */
+    background-color: #fff;
+    /* Not removed via appearance */
+    margin: 0;
+  
+    font: inherit;
+    color: currentColor;
+    width: 1.15em;
+    height: 1.15em;
+    border: 0.15em solid currentColor;
+    border-radius: 0.15em;
+    transform: translateY(-0.075em);
+  
+    display: grid;
+    place-content: center;
+  }
+  
+  input[type="checkbox"]::before {
+    content: "";
+    width: 0.65em;
+    height: 0.65em;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em #4CAF50;
+  
+    transform-origin: bottom left;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+  
+  input[type="checkbox"]:checked::before {
+    transform: scale(1);
+  }
+
+  .add-dialog input {
+    border: none;
+  }
+  
+  button.add-button {
+    width: 70px;
+    border: none;
+    border: 1px solid #ccc;
+    border-bottom: 3px solid #666;
+  }
+  
+  .save-button {
+    width: 100%;
+    font-size: 18px;
+    text-align: center;
+    cursor: pointer;
+    outline: #000;
+    color: #fff;
+    /* background-color: #04AA6D; */
+    border: none;
+    border-radius: 7px;
+    box-shadow: 0 3px #333;
+  }
+  
+  .saveButton:hover {background-color: #3e8e41}
+  
+  .save-button:focus {
+    outline: none;
+  }
+  
+  .save-button:active {
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+    outline: none;
+  }
+  
+  .delete-button, .delete-button-ph {
+    width: 12px;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    color: #ec9494;
+  }

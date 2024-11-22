@@ -1,0 +1,17 @@
+
+.login-icon,
+.logout-icon {
+    cursor: pointer;
+}
+
+@media (max-width: 991px) {
+    .navbar .navbar-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .navbar > .container-fluid {
+        display: block;
+    }
+}
