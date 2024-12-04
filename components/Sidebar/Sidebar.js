@@ -1,6 +1,7 @@
 "use client"
 /*eslint-disable*/
 import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
 import PropTypes from "prop-types";
 import Link from "next/link";
@@ -16,6 +17,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 import { fetchData } from '@/utils/apiUtils'
 
 import '@/styles/sidebar.css';
@@ -24,22 +26,23 @@ const Accordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
+  borderRight: 0,
+  borderLeft: 0,
   '&:not(:last-child)': {
-    border: 0,
+    borderTop: `1px solid ${theme.palette.divider}`,
+    borderBottom: 0,
   },
   '&::before': {
     display: 'none',
   },
 }));
 
-function activityLinks() {
-  return data;
-}
-
 export default function Sidebar(props) {
   const { data: session, status } = useSession();
   const [activities, setActivities] = useState([]);
+  const [expanded, setExpanded] = useState('');
   const { color, logo, image, logoText, routes } = props;
+  const params = useParams();
 
   // Fetch activity data on component mount
   useEffect(() => {
@@ -47,20 +50,25 @@ export default function Sidebar(props) {
       if (!session) return;
         const url = "http://127.0.0.1:8000/api/activities/";
         const data = await fetchData(url, "GET", null, session.accessToken);
-        if (data) {
-          console.log(data)
+        //console.log(data, session)
+        if (data && !data.error) {
           setActivities(data.output || [])
         }
       
     };
     loadActivityMenu();
-  }, [session]);
+    if (Object.keys(params).length > 0) setExpanded(params.refs[0]);
+  }, [session, params]);
+
+  const handleChange = (panel) => (event, newExpanded) => {
+    setExpanded(newExpanded ? panel : false);
+  };
 
   var links = (
     <div className="nav">
       {activities.map((item, i) => {
         return (
-          <Accordion key={i}>
+          <Accordion key={i} expanded={expanded === item.activitytype} onChange={handleChange(item.activitytype)}>
             <AccordionSummary
               expandIcon={item.activities.length ? <ExpandMoreIcon /> : ''}
               aria-controls="panel1-content"
@@ -71,15 +79,15 @@ export default function Sidebar(props) {
               {item.activitytypename}
             </AccordionSummary>
             {item.activities.length ?
-            <AccordionDetails>
+            <AccordionDetails sx={{padding: 0}}>
               <ul className="nav-sub-links">
               {item.activities.map((list, j) => {
                 return (
-                  <li key={j}>
-                    <Link href={`/activity/${item.activitytype}/${list.activityid}`} className="nav-links crt">
-                      {list.activity}
-                    </Link>
-                  </li>
+                  <Link key={j} href={`/activity/${item.activitytype}/${list.activityid}`} className="nav-links">
+                    <li>
+                        {list.activity}
+                    </li>
+                  </Link>
                 )
               })}
               </ul>
@@ -97,6 +105,12 @@ export default function Sidebar(props) {
         <Logo logo={logo} />
         {status === "authenticated" ? links : ''}
         <div className="other-links">
+          <Link href='/scanner'>
+            <div className="auth signout-link">
+              <i className="material-icons"><DocumentScannerIcon /></i>
+              <p>Scan attendance</p>
+            </div>
+          </Link>
           {status === "authenticated"
           ? <div className="auth signout-link" onClick={() => signOut()}>
               <i className="material-icons"><LogoutIcon /></i>

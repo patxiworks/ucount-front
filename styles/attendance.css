@@ -1,0 +1,77 @@
+.page-container {
+    /*display: flex;
+    flex-direction: column;
+    align-items: center;*/
+    margin: 2rem 1rem;
+    padding: 1rem;
+    background-color: #fff; /* Equivalent to Tailwind's gray-100 */
+}
+
+.attendance-buttons {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 0;
+}
+
+.mui-button {
+    text-transform: none;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding-left: 0.7rem;
+}
+
+.mui-button span {
+    margin-left: 0.5rem;
+}
+
+.buttons-sep {
+    margin: 2rem 1rem;
+}
+
+.verify-form,
+.register-form {
+    margin: 2rem 0;
+    border-top: 1px dashed;
+    padding: 2rem 0;
+    padding: 2rem 1.5rem 3rem;
+    background-color: rgba(204, 204, 204, 0.15);
+}
+
+.verify-button {
+    /*width: 100%; /* Equivalent to w-full */
+    margin-top: 1rem;
+    /*padding: 0.5rem 0; /* Equivalent to py-2 */
+    color: white;
+    /*border-radius: 0.5rem; /* Rounded corners */
+    transition: background-color 0.2s ease-in-out; /* Smooth color transition */
+    margin-left: 0rem;
+}
+  
+.verify-button.disabled {
+    background-color: #6b7280; /* Tailwind's gray-500 */
+    cursor: not-allowed; /* Change cursor to indicate disabled state */
+}
+
+.register-form-title {
+    margin-left: 1rem;
+    font-weight: bold;
+}
+
+.register-button {
+    margin: 1.5rem 1rem;
+}
+
+.validate-message {
+    text-align: center;
+}
+  
+@media (max-width: 991px) {
+
+    .register-form {
+        padding: 0;
+    }
+    .register-form-title {
+        margin: 1rem 0 0 1rem;
+    }
+
+}

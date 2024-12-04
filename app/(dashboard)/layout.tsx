@@ -87,11 +87,6 @@ export default function Admin({ children, ...rest }: {children: React.ReactNode}
     };
   }, [mainPanel]);
   */
- useEffect(() => {
-  if (screen.width == window.innerWidth && screen.height == window.innerHeight) {
-    setMobileOpen(false)
-  }
- },[window.innerWidth])
 
   return (
     

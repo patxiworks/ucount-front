@@ -1,6 +1,7 @@
 /* DynamicActivityForm css */
 
 .main-panel > .content {
+    margin-top: 65px;
     padding: 30px 15px;
 }
 
@@ -29,6 +30,7 @@
     text-align: center;
     font-weight: bold;
     margin: 0 0 5px;
+    line-height: 1.9rem;
 }
 
 .form-container h5 {
@@ -177,6 +179,10 @@
     margin-right: 0.5em;
     width: 96%;
   }
+
+  .form-control.temp span {
+    color: #f46464;
+  }
   
   .form-control:last-of-type {
     margin-bottom: 0.5em;
@@ -264,3 +270,14 @@
     border: none;
     color: #ec9494;
   }
+
+
+@media (max-width: 991px) {
+    .main-panel > .content {
+        padding: 0;
+    }
+
+    .float-right {
+        float: none !important;
+    }
+}

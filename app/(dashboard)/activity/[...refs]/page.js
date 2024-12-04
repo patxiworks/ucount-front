@@ -18,11 +18,10 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import { PickersDay } from '@mui/x-date-pickers/PickersDay';
 
+import AlertBox from '@/components/Alerts/Alert';
 import { fetchData, sendDataToServer } from '@/utils/apiUtils'
 import { 
   saveToOutbox,
@@ -37,7 +36,7 @@ const filter = createFilterOptions();
 
 const getUniqueParticipants = (events) => {
   const uniqueMap = new Map();
-  events.forEach((event) => {
+  events && events.forEach((event) => {
     event.participantlist.forEach((participant) => {
       uniqueMap.set(participant.participantid, participant);
     });
@@ -46,7 +45,7 @@ const getUniqueParticipants = (events) => {
 };
 
 const getHightlightedDays = (events) => {
-  return events.map(event => event.activitydate)
+  return events && events.map(event => event.activitydate)
 }
 
 const getTodayDate = () => {
@@ -95,10 +94,12 @@ const DynamicActivityForm = () => {
 
       const getLocalData = (localData) => {
         if (localData) {
-          setFormState(localData);
-          setUniqueParticipants(getUniqueParticipants(localData.events));
-          setHighlightedDays(getHightlightedDays(localData.events));
-          setHasContent(true);
+          if (localData?.events) {
+            setFormState(localData);
+            setUniqueParticipants(getUniqueParticipants(localData?.events));
+            setHighlightedDays(getHightlightedDays(localData?.events));
+            setHasContent(true);
+          }
         }
         setLocalMarker(<CloudOffIcon fontSize="small" />)
       }
@@ -109,13 +110,17 @@ const DynamicActivityForm = () => {
         const datares = await fetchData(url, "GET", null, session.accessToken);
         if (datares) {
           const data = datares.output //datares is a json object with format {error: ..., output: ...}. See apiUtils.js for reference
-          setFormState(data);
-          setUniqueParticipants(getUniqueParticipants(data.events));
-          setHighlightedDays(getHightlightedDays(data.events));
-          //saveToLocalStorage("formData", data); // Store data from server in local storage
-          saveToLocalStorage(slugid, data); // Store data from server in local storage
-          setHasContent(true);
-          setLocalMarker("")
+          if (data?.events) {
+            setFormState(data);
+            //console.log(data.events)
+            //console.log(getUniqueParticipants(data.events))
+            setUniqueParticipants(getUniqueParticipants(data.events));
+            setHighlightedDays(getHightlightedDays(data.events));
+            //saveToLocalStorage("formData", data); // Store data from server in local storage
+            saveToLocalStorage(slugid, data); // Store data from server in local storage
+            setHasContent(true);
+            setLocalMarker("")
+          }
         } else {
           getLocalData(localData)
         }
@@ -130,7 +135,7 @@ const DynamicActivityForm = () => {
 
   useEffect(() => { 
     if (Object.keys(formState).length) {
-      handleDateChange(dayjs(todayDate))
+      handleDateChange(dayjs(selectedDate))
     }
   }, [formState]);
   
@@ -202,7 +207,7 @@ const DynamicActivityForm = () => {
     setSelectedDate(date);
 
     // Find participants who attended on the selected date
-    const event = formState.events.find((ev) => ev.activitydate === date);
+    const event = formState?.events?.find((ev) => ev.activitydate === date);
     const newCheckedParticipants = {};
 
     if (event) {
@@ -266,15 +271,16 @@ const DynamicActivityForm = () => {
     setNewParticipant((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddParticipant = () => {
-    //console.log(newParticipant)
+  const handleAddParticipant = async () => {
+    console.log(newParticipant, uniqueParticipants)
     if (!newParticipant.surname || !newParticipant.firstname) return;
 
     const combinedName = `${newParticipant?.surname ?? ''} ${newParticipant?.firstname ?? ''} ${newParticipant?.othername ?? ''}`;
     const fullName = combinedName.replace(/\s+/g, ' ').trim()
     const newId =  newParticipant?.originalid ?? Date.now();
+    //const newId =  newParticipant?.originalid ? newParticipant?.participantid : Date.now();
 
-    if (!handleDuplicateNameCheck(uniqueParticipants, fullName)) {
+    const addToList = () => {
       setUniqueParticipants((prev) => [
         ...prev,
         { ...newParticipant, participantid: newId }
@@ -282,19 +288,39 @@ const DynamicActivityForm = () => {
       setAddedParticipants((prev) => [...prev, newParticipant])
       handleCheckboxChange(newId) // add checkbox to the new participant entry
       setValue('') // empty the autocomplete input
+
+      if (!handleDuplicateNameCheck(participantNames, fullName)) {
+        setParticipantNames((prev) => [...prev, { participantid: newId, participantname: fullName }]);
+      }
+
+      setNewParticipant({
+        participantid: newId,
+        originalid: '',
+        participantname: '',
+        surname: '',
+        firstname: '',
+        othername: '',
+      });
     }
 
-    if (!handleDuplicateNameCheck(participantNames, fullName)) {
-      setParticipantNames((prev) => [...prev, { participantid: newId, participantname: fullName }]);
+    if (!handleDuplicateNameCheck(uniqueParticipants, fullName)) {
+      if (!newParticipant.originalid) { // i.e. if the user does not already exist in the database
+        if (!newParticipant.othername) newParticipant.othername = ""
+        const data = {...newParticipant, participantid: newId}
+        // send to database as a placehoder
+        const response = await sendDataToServer("http://127.0.0.1:8000/api/add/placeholder/", data, session.accessToken);
+        if (response.error) {
+          console.log(response)
+          setSaveMessage([response.detail, "error"])
+          setOpenSnack(true);
+        } else {
+          // if successfully added to database...
+          addToList()
+        }
+      } else {
+        addToList();
+      }
     }
-    
-    setNewParticipant({
-      participantid: newId,
-      participantname: '',
-      surname: '',
-      firstname: '',
-      othername: '',
-    });
     //setShowNewParticipantForm(false);
   };
 
@@ -311,20 +337,21 @@ const DynamicActivityForm = () => {
     year: '',
   });
 
-  const handleDialogSubmit = (event) => {
+  const handleDialogSubmit = async (event) => {
     event.preventDefault();
-    console.log(dialogValue)
+    //console.log(dialogValue)
     let fullname = (dialogValue?.surname ?? '') + ' ' + (dialogValue?.firstname ?? '') + ' ' + (dialogValue?.othername ?? '')
     fullname = fullname.replace(/\s+/g, ' ').trim()
     const data = {
       participantname: fullname,
       surname: dialogValue.surname,
       firstname: dialogValue.firstname, //parseInt(dialogValue.year, 10),
-      othername: dialogValue.othername,
+      othername: dialogValue.othername ?? '',
     };
     setValue(data)
     handleClose();
     handleNewParticipantCheck();
+    
   };
 
   const processEntryDetails = (response) => {
@@ -365,7 +392,7 @@ const DynamicActivityForm = () => {
     saveToLocalStorage(slugid, updatedData);
     
     if (isOnline()) {
-      const response = await sendDataToServer(updatedData);
+      const response = await sendDataToServer("http://127.0.0.1:8000/api/add/attendance/", updatedData, session.accessToken);
       console.log(response)
       if (response.error) {
         setSaveMessage(processEntryDetails(response))
@@ -401,7 +428,7 @@ const DynamicActivityForm = () => {
         total: participant.total,
       })),
     };
-
+    
     // submit only if participants have been selected
     if (selectedParticipants.length) {
       // check if date already exists. If there is none append it; if there is, replace its data
@@ -426,7 +453,7 @@ const DynamicActivityForm = () => {
         //console.log(formState);
         handleStorage(updatedData)
       }
-
+      
       setAddedParticipants([]) // empty the array of freshly added participants
       processOutbox();  // Try sending outbox on every new submit
     }
@@ -497,9 +524,12 @@ const DynamicActivityForm = () => {
       <div className='list-box'>
         {/*<h6>Participants:</h6>*/}
         {uniqueParticipants.map((participant) => (
-          <div key={participant.participantid} className="list-item">
-            <label key={participant.participantid} className="form-control">
-              {participant.participantname}
+          <div key={participant.participantid} className={`${'list-item'}`}>
+            <label 
+              key={participant.participantid} 
+              className={`form-control ${'originalid' in participant && !participant?.originalid ? 'temp' : ''}`}
+            >
+              <span>{participant.participantname}</span>
               <input
                 type="checkbox"
                 checked={checkedParticipants[participant.participantid] || handleAddedCheck(participant)}
@@ -669,7 +699,7 @@ const DynamicActivityForm = () => {
         </>
         }
       </div>
-      <Snackbar
+      {/*<Snackbar
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           open={openSnack}
           autoHideDuration={5000}
@@ -683,14 +713,23 @@ const DynamicActivityForm = () => {
           >
           {saveMessage[0]}
         </Alert>
-      </Snackbar>
+      </Snackbar>*/}
+      <AlertBox 
+        status={openSnack} 
+        onClose={handleCloseSnack} 
+        severity={saveMessage[1]} 
+        message={saveMessage[0]}
+      />
 
       <button type="submit" onClick={handleSubmit} className="button save-button" disabled={!(dateType === 'today' || selectedDate)}>
         Save
       </button>
     
     </form>
-    : <div className="form-container" style={{textAlign: 'center'}}><h5>Oops! Looks like you're offline</h5></div>
+    : <div className="form-container" style={{textAlign: 'center'}}>
+      <h3>Looks like you're offline</h3>
+      <h4>If you're online, then the problem might be from us...</h4>
+      </div>
     }
     </>
   );

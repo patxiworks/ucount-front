@@ -1,0 +1,147 @@
+.container-box {
+    width: 100%; /* Equivalent to w-full */
+    /*max-width: 28rem; /* Equivalent to max-w-md */
+}
+  
+.aspect-box {
+    /*position: relative;*/
+    width: 100%;
+    padding-top: 75%; /* 4:3 aspect ratio (3/4 = 75%) */
+    background-color: black;
+    /*border-radius: 0.5rem; /* Equivalent to rounded-lg */
+    overflow: hidden;
+    box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.3); /* Equivalent to shadow-xl */
+}
+
+.flex-container {
+    /*display: flex;*/
+    flex-direction: column;
+    /*align-items: center;*/
+    justify-content: center;
+    /*min-height: 100vh; /* Full-screen height */
+    background-color: #f3f4f6; /* Equivalent to Tailwind's gray-100 */
+    /*padding: 1rem; /* Equivalent to 4px * 4 = 16px */
+}
+
+.alert-box {
+    position: relative;
+    top: 50px; /* Equivalent to 4 (4px * 4) */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    padding: 1rem; /* Equivalent to 4 (4px * 4) */
+    background-color: #d1fae5; /* Equivalent to Tailwind's green-100 */
+    border: 1px solid #10b981; /* Equivalent to Tailwind's green-500 */
+    border-radius: 0.5rem; /* Equivalent to rounded-lg */
+    width: 100%;
+    max-width: 28rem; /* Equivalent to max-w-md */
+    text-align: center;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Equivalent to shadow-lg */
+    /*animation: fade-in 0.3s ease-in-out; /* Custom animation */
+}
+  
+.alert-heading {
+    font-size: 1.5rem; /* Equivalent to text-2xl */
+    font-weight: bold;
+    color: #065f46; /* Equivalent to Tailwind's green-700 */
+}
+  
+@keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+}
+
+.error-box {
+    position: relative;
+    top: 50px; /* 4 x 4px */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    padding: 1rem; /* 4 x 4px */
+    background-color: #fee2e2; /* Tailwind's red-100 */
+    border: 1px solid #ef4444; /* Tailwind's red-500 */
+    border-radius: 0.5rem; /* Equivalent to rounded-lg */
+    width: 100%;
+    max-width: 28rem; /* Tailwind's max-w-md */
+    text-align: center;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Equivalent to shadow-lg */
+}
+  
+.error-heading {
+    font-size: 1.125rem; /* Equivalent to text-lg */
+    font-weight: bold;
+    color: #b91c1c; /* Tailwind's red-700 */
+}
+
+.error-box .buttons {
+    display: flex;
+    justify-content: space-between;
+}
+
+.button {
+    margin-top: 0.5rem; /* Equivalent to mt-2 */
+    padding: 0.5rem 1rem; /* px-4 (16px) and py-2 (8px) */
+    background-color: #6b7280; /* Tailwind's gray-500 */
+    color: white;
+    border: 1px solid rgba(51, 51, 51, 0.42);
+    border-radius: 0.3rem; /* Equivalent to rounded-lg */
+    transition: background-color 0.2s ease-in-out; /* Transition for hover effect */
+    cursor: pointer;
+}
+
+.button.retry {
+    background-color: #10b981;
+}
+  
+.button:hover {
+    background-color: #4b5563; /* Tailwind's gray-600 */
+}
+
+.no-pointer-events {
+    pointer-events: none;
+}
+
+.full-cover {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.centered-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16rem; /* Equivalent to 64 x 0.25rem */
+    height: 16rem; /* Equivalent to 64 x 0.25rem */
+    border: 2px solid white;
+    border-radius: 0.5rem; /* Large border radius */
+    opacity: 0.5;
+}
+
+.video-container {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the video fills its container while maintaining its aspect ratio */
+}
+  
+@media (max-width: 991px) {
+
+    .alert-box, .error-box {
+        max-width: 20rem;
+    }
+
+}

@@ -62,10 +62,10 @@ export async function fetchData(url, method = "GET", body = null, token = null) 
   }
 
   // Send data to the server
-  export const sendDataToServer = async (data, token) => {
+  export const sendDataToServer = async (url, data, token) => {
     const servres = {'error': false}
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/mark/", {
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -5,6 +5,10 @@
 }
 
 @media (max-width: 991px) {
+    .navbar {
+        position: fixed !important;
+    }
+
     .navbar .navbar-wrapper {
         display: flex;
         align-items: center;
