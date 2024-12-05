@@ -7,6 +7,7 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Autocomplete from '@mui/material/Autocomplete';
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import Typography from '@mui/material/Typography';
 
 import AlertBox from '@/components/Alerts/Alert';
@@ -43,16 +44,14 @@ const RegisterUser = () => {
     phone: '',
     email: '',
     centre: '',
+    invitedby: '',
   });
   const [emailError, setEmailError] = useState('');
-  const [isChecking, setIsChecking] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [isCheckingNames, setIsCheckingNames] = useState(false);
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [invitedBy, setInvitedBy] = useState("");
-  const [invitedBySuggestions, setInvitedBySuggestions] = useState<User[]>([]);
-  const [selectedInvitedBy, setSelectedInvitedBy] = useState<string | null>(
-    null
-  );
+
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -60,26 +59,16 @@ const RegisterUser = () => {
 
   //const { login } = useAuth();
   const router = useRouter();
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  //const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const currencies = [
-    {
-      value: 'USD',
-      label: '$',
-    },
-    {
-      value: 'EUR',
-      label: '€',
-    },
-    {
-      value: 'BTC',
-      label: '฿',
-    },
-    {
-      value: 'JPY',
-      label: '¥',
-    },
-  ];
+  const [centres, setCentres] = useState([]);
+  const [people, setPeople] = useState([]);
+  const [nameError, setNameError] = useState('');
+
+  const OPTIONS_LIMIT = 5;
+  const filterOptions = createFilterOptions({
+    limit: OPTIONS_LIMIT
+  });
 
   useEffect(() => {
     // Check if the user has already been validated through QR scan
@@ -105,43 +94,83 @@ const RegisterUser = () => {
     }
   }, [router]);
 
+  // Fetch centres on component mount
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/api/centres/')
+        .then((res) => res.json())
+        .then((data) => setCentres(data))
+        .catch(() => setCentres([])); // Handle errors gracefully
+
+      fetch('http://127.0.0.1:8000/api/people/')
+        .then((res) => res.json())
+        .then((data) => setPeople(data))
+        .catch(() => setPeople([])); // Handle errors gracefully
+  }, []);
+
   // Email validation
   useEffect(() => {
     if (formData.email) {
-      console.log(formData.email)
       const timeoutId = setTimeout(() => {
-        setIsChecking(true);
-        fetch(`http://127.0.0.1:8000/api/check-email/?email=${formData.email}`)
+        setIsCheckingEmail(true);
+        fetch(`http://127.0.0.1:8000/api/validate/email/?email=${formData.email}`)
           .then((res) => res.json())
           .then((data) => {
-              setIsChecking(false);
-              if (data.exists) {
-                  setEmailError('This email is already in use.');
-              } else {
-                  setEmailError('');
-              }
+            setIsCheckingEmail(false);
+            if (data.exists) {
+                setEmailError('This email is already in use.');
+            } else {
+                setEmailError('');
+            }
           })
           .catch(() => {
-              setIsChecking(false);
-              setEmailError('Error checking email.');
+            setIsCheckingEmail(false);
+            setEmailError('Error checking email.');
           });
       }, 500); // Debounce
       return () => clearTimeout(timeoutId); // Cleanup debounce
     }
   }, [formData.email]);
 
+
+  // Names validation
+  useEffect(() => {
+    const validateNames = async () => {
+      const { surname, firstname, othername } = formData;
+      try {
+          const response = await fetch(
+              `http://127.0.0.1:8000/api/validate/names/?surname=${encodeURIComponent(surname)}&firstname=${encodeURIComponent(firstname)}&othername=${encodeURIComponent(othername || '')}`
+          );
+          const data = await response.json();
+          if (data.exists) {
+            setIsCheckingNames(true);
+            setNameError('This combination of names already exists.');
+          } else {
+            setIsCheckingNames(false);
+            setNameError('');
+          }
+      } catch (error) {
+        setIsCheckingNames(false);
+        setNameError('Failed to validate names.');
+      }
+    };
+
+    if (formData.surname) {
+      validateNames();
+    }
+  }, [formData.surname, formData.firstname, formData.othername]);
+
   // Handle input changes
   const handleChange = (e: any) => {
-    console.log(e.target.name, e.target.value)
     const { name, value } = e.target;
     setFormData((prevData) => ({
         ...prevData,
-        [name]: value,
+        [name]: value && typeof value === 'string' ? value.trim() : value,
     }));
   };
 
   // Submit form
   const handleSubmit = async (e: any) => {
+    //console.log(formData, people)
     e.preventDefault();
     setFormError('');
     setSuccessMessage('');
@@ -170,6 +199,7 @@ const RegisterUser = () => {
                 phone: '',
                 email: '',
                 centre: '',
+                invitedby: '',
             });
         } else {
             setFormError(result.error || 'An error occurred during submission.');
@@ -177,31 +207,10 @@ const RegisterUser = () => {
     } catch (error) {
         setFormError('Failed to submit the form.');
     }
+    setOpen(true)
   };
 
-  const fetchSuggestions = async (query: string) => {
-    if (query.length < 3) {
-      setInvitedBySuggestions([]);
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/users/search?query=${query}`);
-      const data = await res.json();
-      setInvitedBySuggestions(data.users);
-    } catch {
-      console.log("Failed to fetch suggestions");
-    }
-  };
-
-  const handleInvitedByChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setInvitedBy(value);
-    setIsDropdownOpen(true);
-    fetchSuggestions(value);
-  };
-
-  useEffect(() => {
+  /*useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
@@ -212,103 +221,7 @@ const RegisterUser = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSelectInvitedBy = (user: User) => {
-    setSelectedInvitedBy(user.firstName + " " + user.surname);
-    setInvitedBy(user.firstName + " " + user.surname);
-    setIsDropdownOpen(false);
-  };
-
-  /*const handleSignup = async (e: FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch("/events.json");
-      const events: Event[] = await response.json();
-
-      // Find the event matching today's date and within its attendance time
-      const now = new Date().toISOString().split("T")[0];
-      const activeEvent = events.find(
-        (event) =>
-          event.date === now && isAttendanceTime(event.startTime, event.endTime)
-      );
-
-      if (!activeEvent) {
-        <AlertBox 
-          status={open} 
-          onClose={()=>setOpen(false)} 
-          severity="error"
-          message="No active event at this time."
-        />
-        return;
-      }
-    } catch {
-      <AlertBox 
-        status={open} 
-        onClose={()=>setOpen(false)} 
-        severity="error"
-        message="Failed to validate event time."
-      />
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        body: JSON.stringify({
-          firstName,
-          surname,
-          phone,
-          email,
-          dob,
-          invitedBy: selectedInvitedBy,
-        }),
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await res.json();
-
-      if (res.status === 200) {
-        <AlertBox 
-          status={open} 
-          onClose={()=>setOpen(false)} 
-          severity="success"
-          message={data.message}
-        />
-        //login();
-
-        const signupData = {
-          firstName,
-          surname,
-          phone,
-          email,
-          dob,
-          invitedBy: selectedInvitedBy,
-          timestamp: new Date().toLocaleString(),
-        };
-        localStorage.setItem("signupData", JSON.stringify(signupData));
-
-        router.push("/success");
-      } else {
-        <AlertBox 
-          status={open} 
-          onClose={()=>setOpen(false)} 
-          severity="error"
-          message={data.message}
-        />
-      }
-    } catch {
-      <AlertBox 
-        status={open} 
-        onClose={()=>setOpen(false)} 
-        severity="error"
-        message={"Signup failed!"}
-      />
-    } finally {
-      setLoading(false);
-    }
-  };*/
+  }, []);*/
 
   if (isValidated && eventDetails) {
     return (
@@ -331,10 +244,10 @@ const RegisterUser = () => {
                 label="Surname"
                 variant="filled"
                 color="secondary"
-                sx={{width: 600}}
+                value={formData.surname}
                 onChange={handleChange}
-                value={formData.surname || undefined}
-                focused
+                error={!!nameError}
+                helperText={nameError}
               />
               <TextField
                 required
@@ -343,9 +256,10 @@ const RegisterUser = () => {
                 label="First name"
                 variant="filled"
                 color="secondary"
-                value={formData.firstname || undefined}
+                value={formData.firstname}
                 onChange={handleChange}
-                focused
+                error={!!nameError}
+                helperText={nameError}
               />
               <TextField
                 id="othername"
@@ -353,9 +267,10 @@ const RegisterUser = () => {
                 label="Other name"
                 variant="filled"
                 color="secondary"
-                value={formData.othername || undefined}
+                value={formData.othername}
                 onChange={handleChange}
-                focused
+                error={!!nameError}
+                helperText={nameError}
               />
               <TextField
                 required
@@ -364,10 +279,10 @@ const RegisterUser = () => {
                 label="Email address"
                 variant="filled"
                 color="secondary"
-                value={formData.email || undefined}
+                value={formData.email}
                 onChange={handleChange}
                 error={!!emailError}
-                helperText={emailError || (isChecking ? 'Checking...' : '')}
+                helperText={emailError || (isCheckingEmail ? 'Checking...' : '')}
                 focused
               />
               <TextField
@@ -377,7 +292,7 @@ const RegisterUser = () => {
                 label="Phone number"
                 variant="filled"
                 color="secondary"
-                value={formData.phone || undefined}
+                value={formData.phone}
                 onChange={handleChange}
                 focused
               />
@@ -392,20 +307,32 @@ const RegisterUser = () => {
                 onChange={handleChange}
                 focused
               >
-                {currencies.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+                {centres.length 
+                ? centres.map((centre: any) => (
+                  <MenuItem key={centre.centreid} value={centre.centreid}>
+                    {centre.centre}
                   </MenuItem>
-                ))}
+                )) 
+                : ''}
               </TextField>
               <Autocomplete
-                options={top100Films || []}
-                id="friend"
+                options={people || []}
+                id="invitedby"
                 autoComplete
-                getOptionLabel={(option) => option.title}
+                filterOptions={filterOptions}
+                getOptionLabel={(option: any) =>
+                  //`${option.participantname}`
+                  `${option.surname} ${option.firstname}${option.othername ? ` ${option.othername}` : ''}`
+                }
+                onChange={(event, value: any) =>
+                  setFormData((prevData) => ({
+                      ...prevData,
+                      invitedby: value ? value.participantid : '',
+                  }))
+                }
                 renderInput={(params) => (
                   <TextField {...params} 
-                    name="friend"
+                    name="invitedby"
                     label="Invited by? (type to search)" 
                     variant="filled" 
                     color="secondary"
@@ -416,104 +343,22 @@ const RegisterUser = () => {
               />
             </div>
           </Box>
-          {formError && <Typography color="error">{formError}</Typography>}
-          {successMessage && <Typography color="success">{successMessage}</Typography>}
+          <div>
+          {formError && <AlertBox status={open} onClose={()=>setOpen(false)} severity="error" message={formError} />}
+          {successMessage && <AlertBox  status={open} onClose={()=>setOpen(false)} severity="success" message={successMessage} />}
+          </div>
           <Button 
             type="submit"
             variant="contained"
             color="secondary" 
             size="medium"
-            disabled={!!emailError || isChecking}
+            disabled={!!emailError || isCheckingEmail || isCheckingNames}
             className={`register-button ${
               loading ? "disabled" : "enabled"
             }`}
           >
             Register
           </Button>
-          {/*<label className="block mb-2">Surname</label>
-          <input
-            type="text"
-            value={surname}
-            onChange={(e) => setSurname(e.target.value)}
-            placeholder="Surname"
-            className="mb-4 w-full px-4 py-2 border rounded"
-            required
-          />
-
-          <label className="block mb-2">First Name</label>
-          <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            placeholder="First Name"
-            className="mb-4 w-full px-4 py-2 border rounded"
-            required
-          />
-
-          <label className="block mb-2">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="mb-4 w-full px-4 py-2 border rounded"
-            required
-          />
-
-          <label className="block mb-2">Date of Birth</label>
-          <input
-            type="date"
-            value={dob}
-            onChange={(e) => setDob(e.target.value)}
-            className="mb-4 w-full px-4 py-2 border rounded"
-            required
-          />
-
-          <label className="block mb-2">Phone Number</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Phone Number"
-            className="mb-4 w-full px-4 py-2 border rounded"
-            required
-          />
-
-          <label className="block mb-2">Invited By</label>
-          <div ref={dropdownRef} className="relative">
-            <input
-              type="text"
-              value={invitedBy}
-              onChange={handleInvitedByChange}
-              placeholder="Invited By (type to search)"
-              className="w-full px-4 py-2 border rounded"
-              required
-              onClick={() => setIsDropdownOpen(true)}
-            />
-            {isDropdownOpen && invitedBySuggestions.length > 0 && (
-              <ul className="absolute z-10 bottom-full mb-2 bg-white border rounded-md shadow-lg w-full max-h-40 overflow-y-auto">
-                {invitedBySuggestions.map((user) => (
-                  <li
-                    key={user.phone}
-                    onClick={() => handleSelectInvitedBy(user)}
-                    className="px-4 py-2 cursor-pointer hover:bg-gray-200"
-                  >
-                    {user.firstName} {user.surname}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-2 text-white rounded ${
-              loading ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-600"
-            } mt-[20px]`}
-          >
-            {loading ? "Loading" : "Submit"}
-          </button>*/}
         </form>
       </div>
     );
@@ -540,12 +385,3 @@ export default function AttendanceForm() {
     </div>
   );
 }
-
-const top100Films = [
-  { title: 'The Shawshank Redemption', year: 1994 },
-  { title: 'The Godfather', year: 1972 },
-  { title: 'The Godfather: Part II', year: 1974 },
-  { title: 'The Dark Knight', year: 2008 },
-  { title: '12 Angry Men', year: 1957 },
-  { title: "Schindler's List", year: 1993 },
-]
