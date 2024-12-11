@@ -21,3 +21,16 @@ export function isAttendanceTime(startTime, endTime) {
 }
 
 
+export function isTimeBetween(target, start, end) {
+  // Parse the times into Date objects
+  const [targetHours, targetMinutes] = target.split(':').map(Number);
+  const [startHours, startMinutes] = start.split(':').map(Number);
+  const [endHours, endMinutes] = end.split(':').map(Number);
+
+  const targetTime = new Date(0, 0, 0, targetHours, targetMinutes);
+  const startTime = new Date(0, 0, 0, startHours, startMinutes);
+  const endTime = new Date(0, 0, 0, endHours, endMinutes);
+
+  // Check if target time is within the range
+  return targetTime >= startTime && targetTime <= endTime;
+}

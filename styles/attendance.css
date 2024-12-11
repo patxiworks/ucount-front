@@ -1,21 +1,25 @@
 .page-container {
     /*display: flex;
     flex-direction: column;
-    align-items: center;*/
-    margin: 2rem 1rem;
+    align-items: center;
+    margin: 2rem 1rem;*/
     padding: 1rem;
     background-color: #fff; /* Equivalent to Tailwind's gray-100 */
 }
 
 .attendance-buttons {
     display: flex;
-    flex-direction: column;
-    padding: 2rem 0;
+    justify-content: space-around;
+    gap: 2rem;
+    margin: 2rem 0;
+    padding: 2rem;
+    border: 1px dashed;
+    background-color: rgba(204, 204, 204, 0.15);
 }
 
 .mui-button {
     text-transform: none;
-    font-weight: bold;
+    font-weight: 500;
     font-size: 1.2rem;
     padding-left: 0.7rem;
 }
@@ -38,13 +42,13 @@
 }
 
 .verify-button {
-    /*width: 100%; /* Equivalent to w-full */
-    margin-top: 1rem;
+    /*width: 100%; /* Equivalent to w-full 
+    margin-top: 1rem;*/
     /*padding: 0.5rem 0; /* Equivalent to py-2 */
     color: white;
     /*border-radius: 0.5rem; /* Rounded corners */
     transition: background-color 0.2s ease-in-out; /* Smooth color transition */
-    margin-left: 0rem;
+    margin-left: 1rem;
 }
   
 .verify-button.disabled {
@@ -54,7 +58,15 @@
 
 .register-form-title {
     margin-left: 1rem;
+}
+.register-form-title h4 {
     font-weight: bold;
+}
+.register-form-title.success h4 {
+    color: #0066f0
+}
+.register-form-title h5 {
+    font-size: 0.8rem;
 }
 
 .register-button {
@@ -64,14 +76,28 @@
 .validate-message {
     text-align: center;
 }
+
+.email-validate-message {
+    height: 20px;
+}
+.email-validate-message h5.message {
+    color: #ff0000;
+}
   
 @media (max-width: 991px) {
 
-    .register-form {
-        padding: 0;
+    .attendance-buttons {
+        flex-direction: column;
+        justify-content: space-around;
+        gap: 2rem;
+        padding: 2rem;
+        border: 1px dashed;
     }
+    /*.register-form {
+        padding: 0;
+    }*/
     .register-form-title {
-        margin: 1rem 0 0 1rem;
+        margin: 1rem 0 1rem 1rem;
     }
 
 }

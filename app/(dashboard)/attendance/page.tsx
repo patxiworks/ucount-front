@@ -1,114 +1,91 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { decrypt } from "@/utils/encryptionUtils";
-import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Button from '@mui/material/Button';
+import PersonIcon from '@mui/icons-material/Person';
+import GroupIcon from '@mui/icons-material/Group';
+
+import { PageTitle } from "@/components/Attendance/PageTitle";
+import { ValidateMessage, LoadingSpinner } from '@/components/Validate/Validate';
+import '@/styles/attendance.css';
 
 interface Event {
-  date: string;
   name: string;
   description: string;
 }
 
-// Loading component for better UX
-function LoadingSpinner() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <p className="text-lg">Loading attendance...</p>
-    </div>
-  );
-}
-
-// Separate component for the attendance verification logic
-function AttendanceVerifier() {
-  const searchParams = useSearchParams();
+const AttendanceOptions = () => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [todayEvent, setTodayEvent] = useState<Event | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const today = dayjs().format("YYYY-MM-DD");
+  const [isValidated, setIsValidated] = useState(false);
+  const [eventDetails, setEventDetails] = useState<Event | null>(null);
+  const [noSession, setNoSession] = useState(false);
 
   useEffect(() => {
-    const verifyDate = async () => {
-      const encryptedEvents = searchParams.get("events");
+    // Check if the user has already been validated through QR scan
+    const validatedData = sessionStorage.getItem("ucount_event");
+    if (validatedData) {
+      setIsValidated(true);
+      setEventDetails(JSON.parse(validatedData));
+    } else {
+      setNoSession(true)
+    }
+  }, []);
 
-      if (!encryptedEvents) {
-        setIsLoading(false);
-        setError("No event data provided");
-        return;
-      }
-
-      try {
-        const decryptedEvents = decrypt(encryptedEvents);
-        const events: Event[] = JSON.parse(decryptedEvents);
-        const eventForToday = events.find((event) => event.date === today);
-
-        if (eventForToday) {
-          setTodayEvent(eventForToday);
-          // Redirect after showing the success message
-          setTimeout(() => router.push("/"), 3000);
-        } else {
-          setError("No event scheduled for today");
-        }
-      } catch {
-        setError("Invalid event data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    verifyDate();
-  }, [searchParams, today, router]);
-
-  // Handle Cancel button click
-  const handleCancel = () => {
-    router.push("/"); // Navigate to the homepage or any desired page
-  };
-
-  if (isLoading) {
+  if (isValidated && eventDetails) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-lg">Verifying event...</p>
+      <div className="page-container">
+        <PageTitle event={eventDetails} />
+        <p className="text-lg text-gray-700 mb-6">{eventDetails.description}</p>
+        {/* Hero Component with Login and Signup */}
+        <div className="attendance-buttons">
+          <Link href="/attendance/new">
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              size="large" 
+              className="mui-button"
+              sx={{textAlign: 'left', lineHeight: '1.5rem', letterSpacing: '0rem', backgroundColor: 'rgba(156, 39, 176, 0.1)'}}
+              startIcon={<PersonIcon sx={{color: '#000'}} />}
+            >
+              I am attending for the first time...
+            </Button>
+          </Link>
+          <Link href="/attendance/existing">
+            <Button
+              variant="outlined" 
+              color="secondary" 
+              size="large" 
+              className="mui-button" 
+              sx={{textAlign: 'left', lineHeight: '1.5rem', letterSpacing: '0rem', backgroundColor: 'rgba(156, 39, 176, 0.1)'}}
+              startIcon={<GroupIcon sx={{color: '#000'}} />}
+            >
+              I have attended and registered before...
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (noSession) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-lg text-red-600">{error}</p>
-        <p className="mt-2">Please check that you&apos;re using a valid QR code.</p>
-        {/* Cancel button */}
-        <button
-          onClick={handleCancel}
-          className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-        >
-          Cancel
-        </button>
+      <div className="page-container">
+        <ValidateMessage router={router} />
       </div>
-    );
+    )
   }
 
-  if (todayEvent) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h2 className="text-xl font-bold mb-4">Event Today: {todayEvent.name}</h2>
-        <p className="mb-4">{todayEvent.description}</p>
-        <p className="text-green-600">Attendance validated! Redirecting...</p>
-      </div>
-    );
-  }
-
-  return null;
+  return <LoadingSpinner />;
 }
 
 // Main component with proper Suspense boundaries
-export default function Attendance() {
+export default function AttendanceHome() {
   return (
-    <div className="container mx-auto px-4">
+    <div>
       <Suspense fallback={<LoadingSpinner />}>
-        <AttendanceVerifier />
+        <AttendanceOptions />
       </Suspense>
     </div>
   );

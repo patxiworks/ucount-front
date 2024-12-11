@@ -2,17 +2,21 @@
 
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState, useRef } from "react";
+import { useSession } from "next-auth/react";
+import Button from '@mui/material/Button';
+
+import { fetchData } from '@/utils/apiUtils'
 import { encrypt } from "@/utils/encryptionUtils";
 import pako from 'pako';
 
-interface Event {
+/*interface Event {
   date: string;
   name: string;
   startTime: string;
   endTime: string;
-}
+}*/
 
-const compressData = (data: string): string => {
+const compressData = (data) => {
   try {
     const stringData = new TextEncoder().encode(data);
     const compressed = pako.deflate(stringData);
@@ -23,34 +27,51 @@ const compressData = (data: string): string => {
   }
 };
 
-export default function AdminQRCode() {
-  const [encryptedData, setEncryptedData] = useState<string>("");
+export default function QRCodeGen({ activityid }) {
+  const [encryptedData, setEncryptedData] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [qrSize, setQrSize] = useState<number>(300);
-  const qrCodeRef = useRef<HTMLDivElement>(null);
+  const [qrSize, setQrSize] = useState(400);
+  const qrCodeRef = useRef(null);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const fetchAndEncryptEvents = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/sample/");
-        const data = await response.json();
+        //const response = await fetch("http://127.0.0.1:8000/api/sample/");
+        //const data = await response.json();
+        if (!session) return;
+        const url = `http://127.0.0.1:8000/api/events/${activityid}/`;
+        const data = await fetchData(url, "GET", null, session?.accessToken);
+        //console.log(data)
+        if (!data?.error) {
+          if (data?.output.length) {
+            // Include all event details in the QR code
+            const events = data.output.map(({ event, date, name, startTime, endTime }) => ({
+              event,
+              date: date.replace(/-/g, '').slice(2),
+              name,
+              startTime,
+              endTime
+            }));
 
-        // Include all event details in the QR code
-        const events: Event[] = data.events.map(({ date, name, startTime, endTime }: Event) => ({
-          date: date.replace(/-/g, '').slice(2),
-          name,
-          startTime,
-          endTime
-        }));
+            events.sort((a, b) => a.date.localeCompare(b.date));
 
-        events.sort((a, b) => a.date.localeCompare(b.date));
+            const eventsString = JSON.stringify(events);
+            const compressedEvents = compressData(eventsString);
+            const encryptedEvents = encrypt(compressedEvents);
+            setEncryptedData(encryptedEvents);
 
-        const eventsString = JSON.stringify(events);
-        const compressedEvents = compressData(eventsString);
-        const encryptedEvents = encrypt(compressedEvents);
-        setEncryptedData(encryptedEvents);
+          } else {
+            setErrorMessage('There is no data to display')
+          }
+        } else {
+          setErrorMessage('There was problem. Could not fetch the data.')
+          console.error("Failed to obtain the event data:" + data?.output);
+        }
       } catch (error) {
-        console.error("Failed to process event data:", error);
+        setErrorMessage('Something went wrong. Could not load the QR code.')
+        console.error("Failed to process the event data:" + error);
       }
     };
 
@@ -114,13 +135,12 @@ export default function AdminQRCode() {
 
   return (
     <div className="flex flex-col items-center p-4">
-      <h4 className="text-xl font-bold mb-6">Event Attendance QR Code</h4>
       
       {encryptedData ? (
-        <div className="space-y-6">
+        <div className="space-y-6" style={{textAlign: 'center'}}>
           <div 
             ref={qrCodeRef}
-            className="p-4 bg-white rounded-lg shadow-lg"
+            className="bg-white rounded-lg shadow-lg"
           >
             <QRCodeSVG
               value={encryptedData}
@@ -135,19 +155,17 @@ export default function AdminQRCode() {
             />
           </div>
           
-          <button
+          <Button
             onClick={handlePrint}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg 
-                     hover:bg-blue-600 transition-colors duration-200 
-                     shadow-md active:scale-95 transform no-print"
+            variant="outlined"
           >
-            Print QR Code
-          </button>
+            Print
+          </Button>
         </div>
       ) : (
         <div className="flex items-center space-x-2">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-          <p className="text-gray-600">Generating QR code...</p>
+          <p className="text-gray-600">{errorMessage ? errorMessage : 'Generating QR code...'}</p>
         </div>
       )}
     </div>

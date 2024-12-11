@@ -82,3 +82,44 @@ export async function fetchData(url, method = "GET", body = null, token = null) 
       return {error: error, detail: 'Failed to add participants. Please try again later.'};
     }
   };
+
+
+  // check email and add participants (does not use session token)
+  export const checkEmail_addParticipant = async (url, email, setLoading, setEmailError, setSuccess) => {
+    setSuccess(false)
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
+        
+        const result = await response.json();
+        //console.log(result)
+        if (response.ok) {
+            const ucount_attendance = { 
+                user: {
+                    firstname: result?.data?.firstname, 
+                    surname: result?.data?.surname
+                }, 
+                email, 
+                timestamp: new Date().toISOString() 
+            };
+            localStorage.setItem("ucount_attendance", JSON.stringify(ucount_attendance));
+            setLoading(false);
+            setSuccess(true)
+            setEmailError([]);
+            console.log(result.message);
+        } else {
+            setLoading(false);
+            setEmailError([result.message, false]);
+            //console.error('Error:', result.exc);
+        }
+    } catch (error) {
+        setLoading(false);
+        setEmailError(['Something went wrong. Please try again later.', false]);
+        console.error('Request failed:', error);
+    }
+};

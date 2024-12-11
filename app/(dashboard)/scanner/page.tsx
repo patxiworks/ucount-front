@@ -65,42 +65,39 @@ export default function Scanner() {
       console.log(events)
       
       // Find all events for today
-      //const todayEvents = events.filter(event => event.date === today);
-      const todayEvents = events.filter(event => event.date === '241126');
+      const todayEvents = events.filter(event => event.date === today);
       
       if (todayEvents.length === 0) {
         setError("No events scheduled for today");
+        scannerControls.current?.stop();
         return;
       }
-
-      // Find current active event
+      const currentEvent = todayEvents[0]
+      
+      // Find current active event based on current time
       const currentEvents = todayEvents.find(event => {
         isAttendanceTime(event.startTime, event.endTime)
-        //isAttendanceTime("09:00", "23:00")
-    });
-
-    const currentEvent = todayEvents[0]
-
-      if (!currentEvent) {
+      });
+      
+      if (!currentEvents) {
         setError("No active events at this time");
+        scannerControls.current?.stop();
         return;
       }
 
       setSuccessMessage(`✓ QR Code Scanned Successfully for ${currentEvent.name}`);
-      sessionStorage.setItem("ucount_event_today", JSON.stringify({
+      sessionStorage.setItem("ucount_event", JSON.stringify({
         ...currentEvent,
         date: `20${currentEvent.date.slice(0,2)}-${currentEvent.date.slice(2,4)}-${currentEvent.date.slice(4,6)}`
       }));
       
       scannerControls.current?.stop();
-      setTimeout(() => router.push("/attend/"), 1500);
+      setTimeout(() => router.push("/attendance/"), 1500);
     } catch (err) {
       console.error("Scan processing error:", err);
       setError("Invalid QR code format");
     }
   }, [router, today]);
-
-  
 
 
   useEffect(() => {

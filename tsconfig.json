@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "build/types/**/*.ts"
-, "components/QRcode/adminQRCode.js"  ],
+, "components/QRCode/adminQRCode.js"  ],
   "exclude": [
     "node_modules"
   ]

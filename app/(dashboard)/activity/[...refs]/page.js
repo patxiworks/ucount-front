@@ -1,9 +1,9 @@
 "use client"
 // components/DynamicActivityForm.js
-import { SessionProvider } from 'next-auth/react';
+import { useState, useEffect, forwardRef } from 'react';
+
+import { SessionProvider, useSession } from 'next-auth/react';
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { useState, useEffect } from 'react';
-import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import { styled } from "@mui/material/styles";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -11,24 +11,31 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
 import dayjs from 'dayjs';
 import TextField from "@mui/material/TextField";
+import QrCodeIcon from '@mui/icons-material/QrCode';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import Slide from '@mui/material/Slide';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import { PickersDay } from '@mui/x-date-pickers/PickersDay';
 
 import AlertBox from '@/components/Alerts/Alert';
 import { fetchData, sendDataToServer } from '@/utils/apiUtils'
+import { LoadingSpinner } from '@/components/Validate/Validate';
 import { 
   saveToOutbox,
   getFromOutbox,
   saveToLocalStorage, 
   getFromLocalStorage, 
   isOnline } from '@/utils/storageUtils';
+import QRCodeGen from '@/components/QRCode/QRCodeGen';
+
 import '@/styles/pages.css';
 import local from 'next/font/local';
 
@@ -84,6 +91,8 @@ const DynamicActivityForm = () => {
   const [hasContent, setHasContent] = useState(false);
   const [saveMessage, setSaveMessage] = useState(['','info'])
   const [openSnack, setOpenSnack] = useState(false);
+
+  const [openQR, setOpenQR] = useState(false);
   
   const todayDate = getTodayDate();
 
@@ -480,7 +489,7 @@ const DynamicActivityForm = () => {
   };
 
   if (status === "loading") {
-    return <p>Loading...</p>;
+    return <LoadingSpinner />;
   }
 
   if (!session) {
@@ -489,251 +498,295 @@ const DynamicActivityForm = () => {
 
   // Ensure activity data is loaded before rendering
   if (!formState) {
-    return <p>Loading...</p>;
+    return <LoadingSpinner />;
   }
 
-  return (
-    <>
-    <div className="localmarker_icon">{localMarker}</div>
-    { hasContent ?
-    <form className="form-container">
-      <div className="title">
-        <h5>{formState?.activity?.activitytypename}</h5>
-        <h3>{formState?.activitylabel}</h3>
-        <h6>{formState?.activitycentre}</h6>
-      </div>
-      <div className="date-box">
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <MobileDatePicker
-            value={dayjs(todayDate)}
-            format="LL"
-            maxDate={dayjs(todayDate)}
-            onChange={handleDateChange}
-            slots={{
-              day: ServerDay,
-            }}
-            slotProps={{ 
-              toolbar: { hidden: true },
-              day: { highlightedDays }
-            }}
-            
-          />
-        </LocalizationProvider>
-      </div>
+  if (hasContent) {
+    return (
+      <>
+      <div className="localmarker_icon">{localMarker}</div>
+      <form className="form-container">
+        <QrCodeIcon onClick={()=>setOpenQR(true)} fontSize='1rem' sx={{float: 'left', cursor: 'pointer'}} />
+        <div className="title">
+          <h5>{formState?.activity?.activitytypename}</h5>
+          <h3>{formState?.activitylabel}</h3>
+          <h6>{formState?.activitycentre}</h6>
+        </div>
+        <div className="date-box">
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <MobileDatePicker
+              value={dayjs(todayDate)}
+              format="LL"
+              maxDate={dayjs(todayDate)}
+              onChange={handleDateChange}
+              slots={{
+                day: ServerDay,
+              }}
+              slotProps={{ 
+                toolbar: { hidden: true },
+                day: { highlightedDays }
+              }}
+              
+            />
+          </LocalizationProvider>
+        </div>
 
-      <div className='list-box'>
-        {/*<h6>Participants:</h6>*/}
-        {uniqueParticipants.map((participant) => (
-          <div key={participant.participantid} className={`${'list-item'}`}>
-            <label 
-              key={participant.participantid} 
-              className={`form-control ${'originalid' in participant && !participant?.originalid ? 'temp' : ''}`}
-            >
-              <span>{participant.participantname}</span>
-              <input
-                type="checkbox"
-                checked={checkedParticipants[participant.participantid] || handleAddedCheck(participant)}
-                onChange={() => handleCheckboxChange(participant.participantid)}
-              />
-            </label>
-            {
-              handleAddedCheck(participant)
-              ? <button
-                  type="button"
-                  onClick={() => handleDeleteParticipant(participant.participantid)}
-                  className="delete-button"
-                >
-                X
-                </button>
-              : <div className="delete-button-ph"></div>
-            }
-          </div>
-        ))}
-        {isOnline() && <><Autocomplete
-          value={value || null}
-          onChange={(event, newValue) => {
-            if (typeof newValue === 'string') {
-              // timeout to avoid instant validation of the dialog's form.
-              setTimeout(() => {
-                toggleOpen(true);
-                setDialogValue({
-                  participantname: newValue,
-                  surname: '',
-                  firstname: '',
-                  othername: '',
+        <div className='list-box'>
+          {/*<h6>Participants:</h6>*/}
+          {uniqueParticipants.map((participant) => (
+            <div key={participant.participantid} className={`${'list-item'}`}>
+              <label 
+                key={participant.participantid} 
+                className={`form-control ${'originalid' in participant && !participant?.originalid ? 'temp' : ''}`}
+              >
+                <span>{participant.participantname}</span>
+                <input
+                  type="checkbox"
+                  checked={checkedParticipants[participant.participantid] || handleAddedCheck(participant)}
+                  onChange={() => handleCheckboxChange(participant.participantid)}
+                />
+              </label>
+              {
+                handleAddedCheck(participant)
+                ? <button
+                    type="button"
+                    onClick={() => handleDeleteParticipant(participant.participantid)}
+                    className="delete-button"
+                  >
+                  X
+                  </button>
+                : <div className="delete-button-ph"></div>
+              }
+            </div>
+          ))}
+          {isOnline() && <><Autocomplete
+            value={value || null}
+            onChange={(event, newValue) => {
+              if (typeof newValue === 'string') {
+                // timeout to avoid instant validation of the dialog's form.
+                setTimeout(() => {
+                  toggleOpen(true);
+                  setDialogValue({
+                    participantname: newValue,
+                    surname: '',
+                    firstname: '',
+                    othername: '',
+                  });
                 });
-              });
-            } else if (newValue && newValue.inputValue) {
-              toggleOpen(true);
-              const names = newValue.inputValue.split(/\s+/)
+              } else if (newValue && newValue.inputValue) {
+                toggleOpen(true);
+                const names = newValue.inputValue.split(/\s+/)
+                const nameObj = {
+                  participantname: newValue.inputValue,
+                  surname: names[0],
+                  firstname: names[1],
+                  othername: names[2],
+                };
+                setDialogValue(nameObj)
+                //handleAutocompleteInputChange(nameObj)
+              } else {
+                setValue(newValue);
+              }
+            }}
+            onInputChange={(event, newInputValue) => {
+              const index = participantNames.findIndex(i=>i.participantname==newInputValue)
+              const originalid = participantNames[index]?.participantid ?? undefined
+              const names = newInputValue.split(/\s+/)
               const nameObj = {
-                participantname: newValue.inputValue,
+                originalid: originalid,
+                participantname: newInputValue,
                 surname: names[0],
                 firstname: names[1],
                 othername: names[2],
               };
-              setDialogValue(nameObj)
-              //handleAutocompleteInputChange(nameObj)
-            } else {
-              setValue(newValue);
-            }
-          }}
-          onInputChange={(event, newInputValue) => {
-            const index = participantNames.findIndex(i=>i.participantname==newInputValue)
-            const originalid = participantNames[index]?.participantid ?? undefined
-            const names = newInputValue.split(/\s+/)
-            const nameObj = {
-              originalid: originalid,
-              participantname: newInputValue,
-              surname: names[0],
-              firstname: names[1],
-              othername: names[2],
-            };
-            handleAutocompleteInputChange(nameObj)
-          }}
-          filterOptions={(options, params) => {
-            const filtered = filter(options, params);
+              handleAutocompleteInputChange(nameObj)
+            }}
+            filterOptions={(options, params) => {
+              const filtered = filter(options, params);
 
-            if (params.inputValue !== '' && params.inputValue.length > 2) {
-              filtered.push({
-                inputValue: params.inputValue,
-                participantname: `Add "${params.inputValue}"`,
-              });
-            }
+              if (params.inputValue !== '' && params.inputValue.length > 2) {
+                filtered.push({
+                  inputValue: params.inputValue,
+                  participantname: `Add "${params.inputValue}"`,
+                });
+              }
 
-            return filtered;
-          }}
-          id="add-participant-form"
-          options={participantNames || []}
-          //options={!participantNames ? [{participantname:"Loading...", participantid:0}] : participantNames }
-          getOptionLabel={(option) => {
-            // for example value selected with enter, right from the input
-            if (typeof option === 'string') {
-              return option;
+              return filtered;
+            }}
+            id="add-participant-form"
+            options={participantNames || []}
+            //options={!participantNames ? [{participantname:"Loading...", participantid:0}] : participantNames }
+            getOptionLabel={(option) => {
+              // for example value selected with enter, right from the input
+              if (typeof option === 'string') {
+                return option;
+              }
+              if (option.inputValue) {
+                return option.inputValue;
+              }
+              return option.participantname;
+            }}
+            selectOnFocus
+            clearOnBlur
+            handleHomeEndKeys
+            renderOption={(props, option) => {
+              const { key, ...optionProps } = props;
+              return (
+                <li key={key} {...optionProps}>
+                  {option.participantname}
+                </li>
+              );
+            }}
+            sx={{ width: '100%', border: 0, display: 'flex' }}
+            freeSolo
+            renderInput={(params) => 
+              <>
+                <TextField {...params} label="New participant" variant="standard" />
+                <button type="button" className="button add-button" onClick={handleAddParticipant}>
+                  Add
+                </button>
+              </>
             }
-            if (option.inputValue) {
-              return option.inputValue;
-            }
-            return option.participantname;
-          }}
-          selectOnFocus
-          clearOnBlur
-          handleHomeEndKeys
-          renderOption={(props, option) => {
-            const { key, ...optionProps } = props;
-            return (
-              <li key={key} {...optionProps}>
-                {option.participantname}
-              </li>
-            );
-          }}
-          sx={{ width: '100%', border: 0, display: 'flex' }}
-          freeSolo
-          renderInput={(params) => 
-            <>
-              <TextField {...params} label="New participant" variant="standard" />
-              <button type="button" className="button add-button" onClick={handleAddParticipant}>
-                Add
-              </button>
-            </>
+          />
+          <Dialog open={open} onClose={handleClose}>
+            <form onSubmit={handleDialogSubmit} className="add-dialog">
+              <DialogTitle>Add a new participant</DialogTitle>
+              <DialogContent>
+                <DialogContentText></DialogContentText>
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  id="surname"
+                  value={dialogValue.surname || ''}
+                  onChange={(event) =>
+                    setDialogValue({
+                      ...dialogValue,
+                      surname: event.target.value,
+                    })
+                  }
+                  sx={{width:'100%'}}
+                  label="Surname"
+                  type="text"
+                  variant="standard"
+                />
+                <TextField
+                  margin="dense"
+                  id="firstname"
+                  value={dialogValue.firstname || ''}
+                  onChange={(event) =>
+                    setDialogValue({
+                      ...dialogValue,
+                      firstname: event.target.value,
+                    })
+                  }
+                  sx={{width:'100%'}}
+                  label="First name"
+                  type="text"
+                  variant="standard"
+                />
+                <TextField
+                  margin="dense"
+                  id="othername"
+                  value={dialogValue.othername || ''}
+                  onChange={(event) =>
+                    setDialogValue({
+                      ...dialogValue,
+                      othername: event.target.value,
+                    })
+                  }
+                  sx={{width:'100%'}}
+                  label="Other name"
+                  type="text"
+                  variant="standard"
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleClose}>Cancel</Button>
+                <Button type="submit">Add</Button>
+              </DialogActions>
+            </form>
+          </Dialog>
+          </>
           }
-        />
-        <Dialog open={open} onClose={handleClose}>
-          <form onSubmit={handleDialogSubmit} className="add-dialog">
-            <DialogTitle>Add a new participant</DialogTitle>
-            <DialogContent>
-              <DialogContentText></DialogContentText>
-              <TextField
-                autoFocus
-                margin="dense"
-                id="surname"
-                value={dialogValue.surname || ''}
-                onChange={(event) =>
-                  setDialogValue({
-                    ...dialogValue,
-                    surname: event.target.value,
-                  })
-                }
-                sx={{width:'100%'}}
-                label="Surname"
-                type="text"
-                variant="standard"
-              />
-              <TextField
-                margin="dense"
-                id="firstname"
-                value={dialogValue.firstname || ''}
-                onChange={(event) =>
-                  setDialogValue({
-                    ...dialogValue,
-                    firstname: event.target.value,
-                  })
-                }
-                sx={{width:'100%'}}
-                label="First name"
-                type="text"
-                variant="standard"
-              />
-              <TextField
-                margin="dense"
-                id="othername"
-                value={dialogValue.othername || ''}
-                onChange={(event) =>
-                  setDialogValue({
-                    ...dialogValue,
-                    othername: event.target.value,
-                  })
-                }
-                sx={{width:'100%'}}
-                label="Other name"
-                type="text"
-                variant="standard"
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleClose}>Cancel</Button>
-              <Button type="submit">Add</Button>
-            </DialogActions>
-          </form>
-        </Dialog>
-        </>
-        }
-      </div>
-      {/*<Snackbar
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-          open={openSnack}
-          autoHideDuration={5000}
-          onClose={handleCloseSnack}
-        >
-          <Alert
+        </div>
+        {/*<Snackbar
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            open={openSnack}
+            autoHideDuration={5000}
             onClose={handleCloseSnack}
-            severity={saveMessage[1]}
-            variant="filled"
-            sx={{ width: '100%' }}
           >
-          {saveMessage[0]}
-        </Alert>
-      </Snackbar>*/}
-      <AlertBox 
-        status={openSnack} 
-        onClose={handleCloseSnack} 
-        severity={saveMessage[1]} 
-        message={saveMessage[0]}
-      />
+            <Alert
+              onClose={handleCloseSnack}
+              severity={saveMessage[1]}
+              variant="filled"
+              sx={{ width: '100%' }}
+            >
+            {saveMessage[0]}
+          </Alert>
+        </Snackbar>*/}
+        <AlertBox 
+          status={openSnack} 
+          onClose={handleCloseSnack} 
+          severity={saveMessage[1]} 
+          message={saveMessage[0]}
+        />
 
-      <button type="submit" onClick={handleSubmit} className="button save-button" disabled={!(dateType === 'today' || selectedDate)}>
-        Save
-      </button>
-    
-    </form>
-    : <div className="form-container" style={{textAlign: 'center'}}>
-      <h3>Looks like you're offline</h3>
-      <h4>If you're online, then the problem might be from us...</h4>
-      </div>
-    }
-    </>
-  );
+        <button type="submit" onClick={handleSubmit} className="button save-button" disabled={!(dateType === 'today' || selectedDate)}>
+          Save
+        </button>
+        <QRCodeDialog open={openQR} handleClose={()=>setOpenQR(false)} activityid={formState.activityid} />
+      </form>
+      </>
+    );
+  }
+
+  if (!hasContent) {
+    return (
+      <div className="form-container" style={{textAlign: 'center'}}>
+        <h3>Looks like you're offline</h3>
+        <h4>If you're online, then the problem might be from us...</h4>
+        </div>
+    )
+  }
+
+  return <LoadingSpinner />;
 };
+
+
+
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
+const QRCodeDialog = ({ open, handleClose, activityid }) => {
+
+  return (
+    <Dialog
+        onClose={handleClose}
+        open={open}
+        TransitionComponent={Transition}
+      >
+        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+          Event Attendance QR Code
+        </DialogTitle>
+        <IconButton
+          aria-label="close"
+          onClick={handleClose}
+          sx={(theme) => ({
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent dividers>
+          <QRCodeGen activityid={activityid} />
+        </DialogContent>
+    </Dialog>
+  )
+}
 
 export default function ActivityFormPage() {
   return (
