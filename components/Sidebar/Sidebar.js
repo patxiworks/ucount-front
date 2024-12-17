@@ -22,6 +22,8 @@ import { fetchData } from '@/utils/apiUtils'
 
 import '@/styles/sidebar.css';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_UCOUNT_BACKEND_URL
+
 const Accordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(({ theme }) => ({
@@ -48,15 +50,15 @@ export default function Sidebar(props) {
   useEffect(() => {
     const loadActivityMenu = async () => {
       if (!session) return;
-        const url = "http://127.0.0.1:8000/api/activities/";
+        const url = `${BACKEND_URL}/api/activities/`;
         const data = await fetchData(url, "GET", null, session.accessToken);
         //console.log(data, session)
         if (data && !data.error) {
           setActivities(data.output || [])
         }
-      
     };
     loadActivityMenu();
+
     if (Object.keys(params).length > 0) setExpanded(params.refs[0]);
   }, [session, params]);
 

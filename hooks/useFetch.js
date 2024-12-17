@@ -1,10 +1,12 @@
 import useSWR from 'swr'
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_UCOUNT_BACKEND_URL
+
 const fetcher = (url) => fetch(url).then((r) => r.json())
 
 function useFetch(item) {
   const { data, error } = useSWR(
-    `http://127.0.0.1:8000/${item}/`,
+    `${BACKEND_URL}/${item}/`,
     //'/data.json',
     fetcher
   )

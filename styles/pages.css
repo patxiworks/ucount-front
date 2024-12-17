@@ -271,6 +271,29 @@
     color: #ec9494;
   }
 
+.placeholder-list {
+  width: 400px;
+  min-width: 300px;
+}
+
+.placeholder-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px dashed #ccc;
+}
+.placeholder-list li span.name {
+  font-weight: 500;
+  color: #f46464;
+}
+.placeholder-list li span.copy {
+  cursor: pointer;
+  padding: 0 5px;
+}
+.placeholder-list li span.copy:hover {
+  background-color: #e1e1e1;
+}
+
 
 @media (max-width: 991px) {
     .main-panel > .content {

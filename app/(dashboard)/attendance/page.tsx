@@ -7,7 +7,7 @@ import Button from '@mui/material/Button';
 import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 
-import { PageTitle } from "@/components/Attendance/PageTitle";
+import { PageTitle } from "@/components/Widgets/Widgets";
 import { ValidateMessage, LoadingSpinner } from '@/components/Validate/Validate';
 import '@/styles/attendance.css';
 

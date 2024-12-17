@@ -1,6 +1,10 @@
 
-.sidebar .nav, .sidebar .other-links {
-    margin-top: 20px;
+.sidebar .nav {
+    margin-top: 0px !important;
+}
+
+.sidebar .other-links {
+    margin-top: 20px !important;
 }
 
 .sidebar ul.nav-sub-links {

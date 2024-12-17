@@ -19,11 +19,12 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
 import Slide from '@mui/material/Slide';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
-import CloudOffIcon from '@mui/icons-material/CloudOff';
 import { PickersDay } from '@mui/x-date-pickers/PickersDay';
+import CloudOffIcon from '@mui/icons-material/CloudOff';
+import CloseIcon from '@mui/icons-material/Close';
+import LinkIcon from '@mui/icons-material/Link';
 
 import AlertBox from '@/components/Alerts/Alert';
 import { fetchData, sendDataToServer } from '@/utils/apiUtils'
@@ -35,15 +36,19 @@ import {
   getFromLocalStorage, 
   isOnline } from '@/utils/storageUtils';
 import QRCodeGen from '@/components/QRCode/QRCodeGen';
+import { encrypt } from '@/utils/encryptionUtils';
 
 import '@/styles/pages.css';
-import local from 'next/font/local';
+//import local from 'next/font/local';
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_UCOUNT_BACKEND_URL
 
 const filter = createFilterOptions();
 
 const getUniqueParticipants = (events) => {
   const uniqueMap = new Map();
   events && events.forEach((event) => {
+    //console.log(event.participantlist)
     event.participantlist.forEach((participant) => {
       uniqueMap.set(participant.participantid, participant);
     });
@@ -92,7 +97,8 @@ const DynamicActivityForm = () => {
   const [saveMessage, setSaveMessage] = useState(['','info'])
   const [openSnack, setOpenSnack] = useState(false);
 
-  const [openQR, setOpenQR] = useState(false);
+  const [openQRDialog, setOpenQRDialog] = useState(false);
+  const [openPlaceholderDialog, setOpenPlaceholderDialog] = useState(false);
   
   const todayDate = getTodayDate();
 
@@ -115,9 +121,10 @@ const DynamicActivityForm = () => {
       
       const localData = getFromLocalStorage(slugid);
       if (isOnline()) {
-        const url = `http://127.0.0.1:8000/api/activity/${slug}/events/${id}/`;
+        const url = `${BACKEND_URL}/api/activity/${slug}/events/${id}/`;
         const datares = await fetchData(url, "GET", null, session.accessToken);
         if (datares) {
+          console.log(datares)
           const data = datares.output //datares is a json object with format {error: ..., output: ...}. See apiUtils.js for reference
           if (data?.events) {
             setFormState(data);
@@ -373,7 +380,7 @@ const DynamicActivityForm = () => {
         const deleted = response?.detail?.deleted?.length
         const errors = response?.detail?.errors?.length
         const alert = errors ? 'info' : 'success'
-        if (created) {
+        /*if (created) {
           if (!deleted) {
             return [`${created} successfully added`, alert]
           } else {
@@ -385,7 +392,8 @@ const DynamicActivityForm = () => {
           } else {
             return [`${deleted} successfully removed`, alert]
           }
-        }
+        }*/
+        return [`Changes made successfully`, alert]
       }
     }
   }
@@ -506,7 +514,8 @@ const DynamicActivityForm = () => {
       <>
       <div className="localmarker_icon">{localMarker}</div>
       <form className="form-container">
-        <QrCodeIcon onClick={()=>setOpenQR(true)} fontSize='1rem' sx={{float: 'left', cursor: 'pointer'}} />
+        <QrCodeIcon onClick={()=>setOpenQRDialog(true)} fontSize='1rem' sx={{float: 'left', cursor: 'pointer'}} />
+        <LinkIcon onClick={()=>setOpenPlaceholderDialog(true)} fontSize='2rem' sx={{float: 'right', cursor: 'pointer'}} />
         <div className="title">
           <h5>{formState?.activity?.activitytypename}</h5>
           <h3>{formState?.activitylabel}</h3>
@@ -532,12 +541,16 @@ const DynamicActivityForm = () => {
         </div>
 
         <div className='list-box'>
-          {/*<h6>Participants:</h6>*/}
+          {/*JSON.stringify(uniqueParticipants)*/}
           {uniqueParticipants.map((participant) => (
             <div key={participant.participantid} className={`${'list-item'}`}>
               <label 
                 key={participant.participantid} 
-                className={`form-control ${'originalid' in participant && !participant?.originalid ? 'temp' : ''}`}
+                className={`
+                  form-control 
+                  ${'originalid' in participant && !participant?.originalid ? 'temp' : ''}
+                  ${'participanttype' in participant && participant?.participanttype === 'Placeholder' ? 'temp' : ''}
+                `}
               >
                 <span>{participant.participantname}</span>
                 <input
@@ -604,11 +617,13 @@ const DynamicActivityForm = () => {
             filterOptions={(options, params) => {
               const filtered = filter(options, params);
 
-              if (params.inputValue !== '' && params.inputValue.length > 2) {
-                filtered.push({
-                  inputValue: params.inputValue,
-                  participantname: `Add "${params.inputValue}"`,
-                });
+              if (formState.activity.activityformat == 'open') {
+                if (params.inputValue !== '' && params.inputValue.length > 2) {
+                  filtered.push({
+                    inputValue: params.inputValue,
+                    participantname: `Add "${params.inputValue}"`,
+                  });
+                }
               }
 
               return filtered;
@@ -638,7 +653,7 @@ const DynamicActivityForm = () => {
               );
             }}
             sx={{ width: '100%', border: 0, display: 'flex' }}
-            freeSolo
+            //{...(formState.activity.activityformat == 'open' ? freeSolo={freeSolo} : {})}
             renderInput={(params) => 
               <>
                 <TextField {...params} label="New participant" variant="standard" />
@@ -709,21 +724,6 @@ const DynamicActivityForm = () => {
           </>
           }
         </div>
-        {/*<Snackbar
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            open={openSnack}
-            autoHideDuration={5000}
-            onClose={handleCloseSnack}
-          >
-            <Alert
-              onClose={handleCloseSnack}
-              severity={saveMessage[1]}
-              variant="filled"
-              sx={{ width: '100%' }}
-            >
-            {saveMessage[0]}
-          </Alert>
-        </Snackbar>*/}
         <AlertBox 
           status={openSnack} 
           onClose={handleCloseSnack} 
@@ -734,7 +734,8 @@ const DynamicActivityForm = () => {
         <button type="submit" onClick={handleSubmit} className="button save-button" disabled={!(dateType === 'today' || selectedDate)}>
           Save
         </button>
-        <QRCodeDialog open={openQR} handleClose={()=>setOpenQR(false)} activityid={formState.activityid} />
+        <QRCodeDialog open={openQRDialog} handleClose={()=>setOpenQRDialog(false)} activityid={formState.activityid} />
+        <PlaceholderListDialog open={openPlaceholderDialog} handleClose={()=>setOpenPlaceholderDialog(false)} participants={uniqueParticipants} />
       </form>
       </>
     );
@@ -783,6 +784,65 @@ const QRCodeDialog = ({ open, handleClose, activityid }) => {
         </IconButton>
         <DialogContent dividers>
           <QRCodeGen activityid={activityid} />
+        </DialogContent>
+    </Dialog>
+  )
+}
+
+const PlaceholderListDialog = ({ open, handleClose, participants }) => {
+  const [copied, setCopied] = useState('Copy link')
+  
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+    //setCopied('Link copied!');
+  };
+
+  const placeholders = []
+  for (var p of participants) {
+    if (p.participanttype == 'Placeholder' || !p?.originalid) placeholders.push(p.participantname)
+  }
+
+  return (
+    <Dialog
+        onClose={handleClose}
+        open={open}
+        TransitionComponent={Transition}
+      >
+        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+          Attendees yet to formally register
+        </DialogTitle>
+        <IconButton
+          aria-label="close"
+          onClick={handleClose}
+          sx={(theme) => ({
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent dividers>
+          <div className='placeholder-list'>
+            <ul>
+              {
+                placeholders.length ?
+                  participants.map((p,i) => {
+                    const link = `http://localhost:3000/register/?p=${encrypt(p.participantid+','+p.participantname)}`
+                    return (
+                      p.participanttype === 'Placeholder' || !p?.originalid
+                      ? <li key={i} style={{display:'flex'}}>
+                          <span className='name'>{p.participantname}</span>
+                          <span className='copy' onClick={() => copyToClipboard(link)}>{copied}</span>
+                        </li>
+                      : ''
+                    )
+                  })
+                : <span>The list is empty</span>
+              }
+            </ul>
+          </div>
         </DialogContent>
     </Dialog>
   )

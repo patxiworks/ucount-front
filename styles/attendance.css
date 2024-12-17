@@ -7,6 +7,15 @@
     background-color: #fff; /* Equivalent to Tailwind's gray-100 */
 }
 
+.main-title {
+    margin-left: 1rem;
+}
+
+.register-title {
+    font-weight: bold;
+    margin: 0 3rem;
+}
+
 .attendance-buttons {
     display: flex;
     justify-content: space-around;

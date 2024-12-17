@@ -66,6 +66,7 @@ export default function Scanner() {
       
       // Find all events for today
       const todayEvents = events.filter(event => event.date === today);
+      //console.log(todayEvents)
       
       if (todayEvents.length === 0) {
         setError("No events scheduled for today");
@@ -76,7 +77,7 @@ export default function Scanner() {
       
       // Find current active event based on current time
       const currentEvents = todayEvents.find(event => {
-        isAttendanceTime(event.startTime, event.endTime)
+        return isAttendanceTime(event.startTime, event.endTime)
       });
       
       if (!currentEvents) {

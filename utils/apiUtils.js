@@ -84,8 +84,8 @@ export async function fetchData(url, method = "GET", body = null, token = null) 
   };
 
 
-  // check email and add participants (does not use session token)
-  export const checkEmail_addParticipant = async (url, email, setLoading, setEmailError, setSuccess) => {
+// check email and add participants (does not use session token)
+export const addParticipant = async (url, email, setLoading, setEmailError, setSuccess) => {
     setSuccess(false)
     try {
         const response = await fetch(url, {
@@ -108,6 +108,45 @@ export async function fetchData(url, method = "GET", body = null, token = null) 
                 timestamp: new Date().toISOString() 
             };
             localStorage.setItem("ucount_attendance", JSON.stringify(ucount_attendance));
+            setLoading(false);
+            setSuccess(true)
+            setEmailError([]);
+            console.log(result.message);
+        } else {
+            setLoading(false);
+            setEmailError([result.message, false]);
+            //console.error('Error:', result.exc);
+        }
+    } catch (error) {
+        setLoading(false);
+        setEmailError(['Something went wrong. Please try again later.', false]);
+        console.error('Request failed:', error);
+    }
+};
+
+
+// check email and add participants (does not use session token)
+export const updateParticipant = async (url, placeholderId, personId, setLoading, setEmailError, setSuccess) => {
+    setSuccess(false)
+    if (!placeholderId || !personId) {
+        setEmailError("Invalid request url");
+        return;
+    }
+  
+    try {
+        // API request to update participant
+        const response = await fetch(
+          `${url}/${placeholderId}/${personId}/`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const result = await response.json();
+        if (response.ok) {
+            //const errorData = await response.json();
             setLoading(false);
             setSuccess(true)
             setEmailError([]);

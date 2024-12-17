@@ -9,9 +9,9 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import Button from '@mui/material/Button';
 
 import AlertBox from '@/components/Alerts/Alert';
-import { PageTitle } from "@/components/Attendance/PageTitle";
+import { PageTitle } from "@/components/Widgets/Widgets";
 import { ValidateMessage, LoadingSpinner } from '@/components/Validate/Validate';
-import { checkEmail_addParticipant } from "@/utils/apiUtils";
+import { addParticipant } from "@/utils/apiUtils";
 import { isAttendanceTime, isTimeBetween } from "@/utils/timeCheck";
 
 import '@/styles/attendance.css';
@@ -23,6 +23,8 @@ interface Event {
   endTime: string;
   name: string;
 }
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_UCOUNT_BACKEND_URL
 
 const ValidateUser = () => {
   const [email, setEmail] = useState("");
@@ -85,66 +87,8 @@ const ValidateUser = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    /*try {
-      const response = await fetch("/events.json");
-      const events: Event[] = await response.json();
-
-      // Find an event that matches today's date and time
-      const now = new Date().toISOString().split("T")[0];
-      const activeEvent = events.find(
-        (event) =>
-          event.date === now &&
-          isAttendanceTime(event.startTime, event.endTime)
-      );
-
-      if (!activeEvent) {
-        <AlertBox 
-          status={open} 
-          onClose={()=>setOpen(false)} 
-          severity="error"
-          message="No active event during this time."
-        />
-        return;
-      }
-    } catch {
-      <AlertBox 
-        status={open} 
-        onClose={()=>setOpen(false)} 
-        severity="error"
-        message="Failed to validate event time."
-      />
-      console.log('error')
-      return;
-    }*/
-
     checkLocalStorage(eventDetails);
-
-    /*try {
-      fetch(`http://127.0.0.1:8000/api/validate/email/?email=${email}`)
-        .then((res) => res.json())
-        .then((data) => {
-          //setIsCheckingEmail(false);
-          if (data.exists) {
-              const loginData = { email, timestamp: new Date().toLocaleString() };
-              localStorage.setItem("loginData", JSON.stringify(loginData));
-              setSuccess(true)
-              console.log('here')
-          } else {
-              setLoading(false);
-              setEmailError(['This email address is not in our records. Is this your first time?', true]);
-          }
-        })
-        .catch(() => {
-          setLoading(false);
-          setEmailError(['Could not connect to the server. Please try again.', false]);
-        });
-    } catch {
-      setLoading(false);
-      setEmailError(['Something went wrong. Please try again later.', false]);
-    }*/
-    //console.log(eventDetails)
-
-    checkEmail_addParticipant(`http://127.0.0.1:8000/api/add/participant/${eventDetails?.event}/`, email, setLoading, setEmailError, setSuccess)
+    addParticipant(`${BACKEND_URL}/api/add/participant/${eventDetails?.event}/`, email, setLoading, setEmailError, setSuccess)
     
   };
 

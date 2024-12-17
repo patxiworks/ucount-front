@@ -16,6 +16,8 @@ import pako from 'pako';
   endTime: string;
 }*/
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_UCOUNT_BACKEND_URL
+
 const compressData = (data) => {
   try {
     const stringData = new TextEncoder().encode(data);
@@ -38,10 +40,8 @@ export default function QRCodeGen({ activityid }) {
   useEffect(() => {
     const fetchAndEncryptEvents = async () => {
       try {
-        //const response = await fetch("http://127.0.0.1:8000/api/sample/");
-        //const data = await response.json();
         if (!session) return;
-        const url = `http://127.0.0.1:8000/api/events/${activityid}/`;
+        const url = `${BACKEND_URL}/api/events/${activityid}/`;
         const data = await fetchData(url, "GET", null, session?.accessToken);
         //console.log(data)
         if (!data?.error) {

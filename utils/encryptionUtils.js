@@ -21,7 +21,7 @@ function decrypt(text) {
     decrypted += decipher.final("utf8");
     return decrypted;
   } catch (error) {
-    console.error("Decryption failed:", error.message);
+    console.log("Decryption error!");
     return "";
   }
 }

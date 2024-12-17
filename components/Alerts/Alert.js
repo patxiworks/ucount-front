@@ -5,7 +5,7 @@ import Alert from '@mui/material/Alert';
 export default function AlertBox({status, onClose, severity, message}) {
   return (
     <Snackbar
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       open={status}
       autoHideDuration={5000}
       onClose={onClose}
