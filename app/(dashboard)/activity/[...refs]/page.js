@@ -5,7 +5,7 @@ import { useState, useEffect, forwardRef } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useParams } from "next/navigation";
-import { styled } from "@mui/material/styles";
+//import { styled } from "@mui/material/styles";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
@@ -47,6 +47,7 @@ const filter = createFilterOptions();
 
 const getUniqueParticipants = (events) => {
   const uniqueMap = new Map();
+  // @typescript-eslint/no-unused-expressions
   events && events.forEach((event) => {
     //console.log(event.participantlist)
     event.participantlist.forEach((participant) => {
@@ -74,12 +75,12 @@ const DynamicActivityForm = () => {
   //const router = useRouter();
   const [formState, setFormState] = useState({});
   const [selectedDate, setSelectedDate] = useState();
-  const [dateType, setDateType] = useState(''); // "past" or "today"
+  //const [dateType, setDateType] = useState(''); // "past" or "today"
   const [checkedParticipants, setCheckedParticipants] = useState({});
   const [uniqueParticipants, setUniqueParticipants] = useState([]);
   const [participantNames, setParticipantNames] = useState([]);
-  const [autocompleteResults, setAutocompleteResults] = useState([]);
-  const [autocompleteVisible, setAutocompleteVisible] = useState(false);
+  //const [autocompleteResults, setAutocompleteResults] = useState([]);
+  //const [autocompleteVisible, setAutocompleteVisible] = useState(false);
   const [addedParticipants, setAddedParticipants] = useState([])
   const [newParticipant, setNewParticipant] = useState({
     participantid: Date.now(),
@@ -88,7 +89,7 @@ const DynamicActivityForm = () => {
     firstname: '',
     othername: ''
   });
-  const [showNewParticipantForm, setShowNewParticipantForm] = useState(false);
+  //const [showNewParticipantForm, setShowNewParticipantForm] = useState(false);
   const [value, setValue] = useState(null);
   const [open, toggleOpen] = useState(false);
   const [highlightedDays, setHighlightedDays] = useState([]);
@@ -160,7 +161,7 @@ const DynamicActivityForm = () => {
   useEffect(() => {
     const fetchParticipants = async () => {
       if (!session) return;
-      const url = "http://127.0.0.1:8000/api/people/vig/?cat=cp&cat=fr";
+      const url = `${BACKEND_URL}/api/people/vig/?cat=cp&cat=fr`;
       const data = await fetchData(url, "GET", null, session.accessToken);
       if (data) {
         setParticipantNames(data.output);
@@ -210,7 +211,7 @@ const DynamicActivityForm = () => {
     return addedParticipants.some(p => p.participantname == participant.participantname)
   }
 
-  const handleDateTypeChange = (type) => {
+  const handleDateTypeChange = () => {
     //setDateType(type);
     setSelectedDate(selectedDate ?? todayDate);
     setCheckedParticipants({});
@@ -246,23 +247,23 @@ const DynamicActivityForm = () => {
     const fullname = item.participantname //e.target.value;
     setNewParticipant((prev) => ({ ...prev, ...item }));
 
-    if (fullname.length >= 2) {
-      const filteredResults = participantNames.filter((participant) =>
-        participant.participantname.toLowerCase().includes(fullname.toLowerCase())
-      );
-      setAutocompleteResults(filteredResults);
-      setAutocompleteVisible(filteredResults.length > 0);
-      //console.log(participantNames, newParticipant, filteredResults)
-    } else {
-      setAutocompleteVisible(false);
-    }
+    // if (fullname.length >= 2) {
+    //   const filteredResults = participantNames.filter((participant) =>
+    //     participant.participantname.toLowerCase().includes(fullname.toLowerCase())
+    //   );
+    //   setAutocompleteResults(filteredResults);
+    //   setAutocompleteVisible(filteredResults.length > 0);
+    //   //console.log(participantNames, newParticipant, filteredResults)
+    // } else {
+    //   setAutocompleteVisible(false);
+    // }
   };
 
-  const handleAutocompleteSelect = (selectedName) => {
-    setNewParticipant((prev) => ({ ...prev, participantname: selectedName }));
-    setAutocompleteVisible(false);
-    setShowNewParticipantForm(false);
-  };
+  // const handleAutocompleteSelect = (selectedName) => {
+  //   setNewParticipant((prev) => ({ ...prev, participantname: selectedName }));
+  //   setAutocompleteVisible(false);
+  //   setShowNewParticipantForm(false);
+  // };
 
   const handleDuplicateNameCheck = (obj, value) => {
     return obj.some(
@@ -275,17 +276,17 @@ const DynamicActivityForm = () => {
       (participant) => participant.participantname.toLowerCase() === newParticipant.participantname.toLowerCase()
     );
 
-    if (!exists && newParticipant.participantname) {
-      setShowNewParticipantForm(true);
-    } else {
-      setShowNewParticipantForm(false);
-    }
+    // if (!exists && newParticipant.participantname) {
+    //   setShowNewParticipantForm(true);
+    // } else {
+    //   setShowNewParticipantForm(false);
+    // }
   };
 
-  const handleNewParticipantChange = (e) => {
-    const { name, value } = e.target;
-    setNewParticipant((prev) => ({ ...prev, [name]: value }));
-  };
+  // const handleNewParticipantChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setNewParticipant((prev) => ({ ...prev, [name]: value }));
+  // };
 
   const handleAddParticipant = async () => {
     console.log(newParticipant, uniqueParticipants)
@@ -324,7 +325,7 @@ const DynamicActivityForm = () => {
         if (!newParticipant.othername) newParticipant.othername = ""
         const data = {...newParticipant, participantid: newId}
         // send to database as a placehoder
-        const response = await sendDataToServer("http://127.0.0.1:8000/api/add/placeholder/", data, session.accessToken);
+        const response = await sendDataToServer(`${BACKEND_URL}/api/add/placeholder/`, data, session.accessToken);
         if (response.error) {
           console.log(response)
           setSaveMessage([response.detail, "error"])
@@ -376,8 +377,8 @@ const DynamicActivityForm = () => {
       if (response.error) {
         return [response.detail, 'error']
       } else {
-        const created = response?.detail?.created?.length
-        const deleted = response?.detail?.deleted?.length
+        //const created = response?.detail?.created?.length
+        //const deleted = response?.detail?.deleted?.length
         const errors = response?.detail?.errors?.length
         const alert = errors ? 'info' : 'success'
         /*if (created) {
@@ -409,7 +410,7 @@ const DynamicActivityForm = () => {
     saveToLocalStorage(slugid, updatedData);
     
     if (isOnline()) {
-      const response = await sendDataToServer("http://127.0.0.1:8000/api/add/attendance/", updatedData, session.accessToken);
+      const response = await sendDataToServer(`${BACKEND_URL}/api/add/attendance/`, updatedData, session.accessToken);
       console.log(response)
       if (response.error) {
         setSaveMessage(processEntryDetails(response))
@@ -492,7 +493,7 @@ const DynamicActivityForm = () => {
     );
   }
 
-  const handleCloseSnack = (event, reason) => {
+  const handleCloseSnack = () => {
     setOpenSnack(false);
   };
 
@@ -731,7 +732,7 @@ const DynamicActivityForm = () => {
           message={saveMessage[0]}
         />
 
-        <button type="submit" onClick={handleSubmit} className="button save-button" disabled={!(dateType === 'today' || selectedDate)}>
+        <button type="submit" onClick={handleSubmit} className="button save-button" disabled={!(selectedDate)}>
           Save
         </button>
         <QRCodeDialog open={openQRDialog} handleClose={()=>setOpenQRDialog(false)} activityid={formState.activityid} />
@@ -744,8 +745,8 @@ const DynamicActivityForm = () => {
   if (!hasContent) {
     return (
       <div className="form-container" style={{textAlign: 'center'}}>
-        <h3>Looks like you're offline</h3>
-        <h4>If you're online, then the problem might be from us...</h4>
+        <h3>Looks like you&apos;re offline</h3>
+        <h4>If you&apos;re online, then the problem might be from us...</h4>
         </div>
     )
   }
@@ -794,7 +795,7 @@ const PlaceholderListDialog = ({ open, handleClose, participants }) => {
   
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text)
-    //setCopied('Link copied!');
+    setCopied('Link copied!');
   };
 
   const placeholders = []
