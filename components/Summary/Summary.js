@@ -29,7 +29,7 @@ export default function Summary(props) {
       if (!session) return;
       const url = `${BACKEND_URL}/api/user/summary/`;
       const data = await fetchData(url, "GET", null, session.accessToken);
-      console.log(url, data, session)
+      //console.log(url, data, session)
       if (data && !data.error) {
         setUserSummary(data.output || [])
       }
