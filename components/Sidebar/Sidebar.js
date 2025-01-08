@@ -52,7 +52,7 @@ export default function Sidebar(props) {
       if (!session) return;
         const url = `${BACKEND_URL}/api/activities/`;
         const data = await fetchData(url, "GET", null, session.accessToken);
-        console.log(url, data, session)
+        //console.log(url, data, session)
         if (data && !data.error) {
           setActivities(data.output || [])
         }
