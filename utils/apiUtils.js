@@ -75,7 +75,7 @@ export async function fetchData(url, method = "GET", body = null, token = null) 
       });
       const res = await response.json();
       if (!response.ok) { //throw new Error("Failed to send data to server");
-        return {error: true, detail: 'An unexpected error occurred.'};
+        return {error: true, detail: 'An unexpected error occurred. Please contact the admin.'};
       }
       return {error: false, detail: res};
     } catch (error) {

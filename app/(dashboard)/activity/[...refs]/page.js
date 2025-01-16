@@ -79,7 +79,7 @@ const DynamicActivityForm = () => {
   const [checkedParticipants, setCheckedParticipants] = useState({});
   const [uniqueParticipants, setUniqueParticipants] = useState([]);
   const [participantNames, setParticipantNames] = useState([]);
-  //const [autocompleteResults, setAutocompleteResults] = useState([]);
+  const [placeholderNames, setPlaceholderNames] = useState([]);
   //const [autocompleteVisible, setAutocompleteVisible] = useState(false);
   const [addedParticipants, setAddedParticipants] = useState([])
   const [newParticipant, setNewParticipant] = useState({
@@ -164,10 +164,33 @@ const DynamicActivityForm = () => {
       const url = `${BACKEND_URL}/api/people/vig/?cat=cp&cat=fr`;
       const data = await fetchData(url, "GET", null, session.accessToken);
       if (data) {
+        //console.log(data.output)
         setParticipantNames(data.output);
       }
     };
     fetchParticipants();
+  }, [session]);
+
+  // Fetch placeholders from API
+  useEffect(() => {
+    const fetchPlaceholders = async () => {
+      if (!session) return;
+      const url = `${BACKEND_URL}/api/placeholders`;
+      const data = await fetchData(url, "GET", null, session.accessToken);
+      if (data) {
+        const placeholders = data.output.map(ph => {
+          const item = {}
+          const combinedName = `${ph?.surname ?? ''} ${ph?.firstname ?? ''} ${ph?.othername ?? ''}`;
+          const fullName = combinedName.replace(/\s+/g, ' ').trim()
+          item['participantname'] = fullName
+          item['participantid'] = ph?.tempid
+          return item
+        })
+
+        setPlaceholderNames(placeholders);
+      }
+    };
+    fetchPlaceholders();
   }, [session]);
 
 
@@ -327,7 +350,7 @@ const DynamicActivityForm = () => {
         // send to database as a placehoder
         const response = await sendDataToServer(`${BACKEND_URL}/api/add/placeholder/`, data, session.accessToken);
         if (response.error) {
-          console.log(response)
+          //console.log(response)
           setSaveMessage([response.detail, "error"])
           setOpenSnack(true);
         } else {
@@ -617,9 +640,9 @@ const DynamicActivityForm = () => {
             }}
             filterOptions={(options, params) => {
               const filtered = filter(options, params);
-
+              
               if (formState.activity.activityformat == 'open') {
-                if (params.inputValue !== '' && params.inputValue.length > 2) {
+                if (!filtered.length && params.inputValue !== '' && params.inputValue.length > 2) {
                   filtered.push({
                     inputValue: params.inputValue,
                     participantname: `Add "${params.inputValue}"`,
@@ -630,7 +653,7 @@ const DynamicActivityForm = () => {
               return filtered;
             }}
             id="add-participant-form"
-            options={participantNames || []}
+            options={participantNames.concat(placeholderNames) || []}
             //options={!participantNames ? [{participantname:"Loading...", participantid:0}] : participantNames }
             getOptionLabel={(option) => {
               // for example value selected with enter, right from the input
@@ -800,7 +823,7 @@ const PlaceholderListDialog = ({ open, handleClose, participants }) => {
 
   const placeholders = []
   for (var p of participants) {
-    if (p.participanttype == 'Placeholder' || !p?.originalid) placeholders.push(p.participantname)
+    if (p.participanttype == 'Placeholder') placeholders.push(p)
   }
 
   return (
@@ -829,10 +852,10 @@ const PlaceholderListDialog = ({ open, handleClose, participants }) => {
             <ul>
               {
                 placeholders.length ?
-                  participants.map((p,i) => {
-                    const link = `http://localhost:3000/register/?p=${encrypt(p.participantid+','+p.participantname)}`
+                  placeholders.map((p,i) => {
+                    const link = `${process.env.NEXT_PUBLIC_UCOUNT_URL}/register/?p=${encrypt(p.participantid+','+p.participantname)}`
                     return (
-                      p.participanttype === 'Placeholder' || !p?.originalid
+                      p.participanttype === 'Placeholder'
                       ? <li key={i} style={{display:'flex'}}>
                           <span className='name'>{p.participantname}</span>
                           <span className='copy' onClick={() => copyToClipboard(link)}>{copied}</span>
