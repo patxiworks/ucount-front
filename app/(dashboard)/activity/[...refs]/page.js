@@ -100,6 +100,7 @@ const DynamicActivityForm = () => {
 
   const [openQRDialog, setOpenQRDialog] = useState(false);
   const [openPlaceholderDialog, setOpenPlaceholderDialog] = useState(false);
+  const [addButtonShow, setAddButtonShow] = useState(false);
   
   const todayDate = getTodayDate();
 
@@ -362,6 +363,7 @@ const DynamicActivityForm = () => {
       }
     }
     //setShowNewParticipantForm(false);
+    setAddButtonShow(false);
   };
 
   const handleClose = () => {
@@ -391,6 +393,7 @@ const DynamicActivityForm = () => {
     setValue(data)
     handleClose();
     handleNewParticipantCheck();
+    setAddButtonShow(true);
     
   };
 
@@ -596,7 +599,8 @@ const DynamicActivityForm = () => {
               }
             </div>
           ))}
-          {isOnline() && <><Autocomplete
+          {isOnline() && 
+          <><Autocomplete
             value={value || null}
             onChange={(event, newValue) => {
               if (typeof newValue === 'string') {
@@ -623,6 +627,11 @@ const DynamicActivityForm = () => {
                 //handleAutocompleteInputChange(nameObj)
               } else {
                 setValue(newValue);
+                if (newValue) {
+                  setAddButtonShow(true);
+                } else {
+                  setAddButtonShow(false);
+                };
               }
             }}
             onInputChange={(event, newInputValue) => {
@@ -681,9 +690,11 @@ const DynamicActivityForm = () => {
             renderInput={(params) => 
               <>
                 <TextField {...params} label="New participant" variant="standard" />
+                {addButtonShow &&
                 <button type="button" className="button add-button" onClick={handleAddParticipant}>
                   Add
                 </button>
+                }
               </>
             }
           />
