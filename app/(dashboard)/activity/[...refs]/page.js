@@ -840,17 +840,25 @@ const QRCodeDialog = ({ open, handleClose, activityid }) => {
 }
 
 const PlaceholderListDialog = ({ open, handleClose, participants }) => {
-  const [copied, setCopied] = useState('Copy link')
-  
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text)
-    setCopied('Link copied!');
+  const [copiedState, setCopiedState] = useState({}); // Track copied state for each participant
+
+  const copyToClipboard = (text, participantId) => {
+    navigator.clipboard.writeText(text);
+    setCopiedState((prevState) => ({
+      ...prevState,
+      [participantId]: 'Link copied!', // Update the copied state for the specific participant
+    }));
+
+    // Optionally reset the copied state after a delay
+    setTimeout(() => {
+      setCopiedState((prevState) => ({
+        ...prevState,
+        [participantId]: 'Copy link',
+      }));
+    }, 3000);
   };
 
-  const placeholders = []
-  for (var p of participants) {
-    if (p.participanttype == 'Placeholder') placeholders.push(p)
-  }
+  const placeholders = participants.filter((p) => p.participanttype === 'Placeholder');
 
   return (
     <Dialog
@@ -881,13 +889,19 @@ const PlaceholderListDialog = ({ open, handleClose, participants }) => {
                   placeholders.map((p,i) => {
                     const link = `${process.env.NEXT_PUBLIC_UCOUNT_URL}/register/?p=${encrypt(p.participantid+','+p.participantname)}`
                     return (
-                      p.participanttype === 'Placeholder'
-                      ? <li key={i} style={{display:'flex'}}>
-                          <span className='name'>{p.participantname}</span>
-                          <span className='copy' onClick={() => copyToClipboard(link)}>{copied}</span>
-                        </li>
-                      : ''
-                    )
+                      <li key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="name" style={{ flex: 1 }}>
+                          {p.participantname}
+                        </span>
+                        <span
+                          className="copy"
+                          style={{ cursor: 'pointer', color: 'blue' }}
+                          onClick={() => copyToClipboard(link, p.participantid)}
+                        >
+                          {copiedState[p.participantid] || 'Copy link'}
+                        </span>
+                      </li>
+                    );
                   })
                 : <span>The list is empty</span>
               }
