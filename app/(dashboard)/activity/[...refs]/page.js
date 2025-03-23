@@ -162,7 +162,8 @@ const DynamicActivityForm = () => {
   useEffect(() => {
     const fetchParticipants = async () => {
       if (!session) return;
-      const url = `${BACKEND_URL}/api/people/vig/?cat=cp&cat=fr`;
+      const ctr = formState?.ctr;
+      const url = `${BACKEND_URL}/api/people/${ctr ? ctr : 'Vig'}/?cat=cp&cat=fr`;
       const data = await fetchData(url, "GET", null, session.accessToken);
       if (data) {
         //console.log(data.output)
@@ -223,11 +224,25 @@ const DynamicActivityForm = () => {
     }
   };
 
-  const handleDeleteParticipant = (participantId) => {
-      setUniqueParticipants((prev) =>
-        prev.filter((participant) => participant.participantid !== participantId)
+  const handleDeleteParticipant = async (participantId) => {
+    const data = {tempid: participantId}
+    const response = await sendDataToServer(`${BACKEND_URL}/api/delete/placeholder/`, data, session.accessToken);
+    if (response.error) {
+      //console.log(response)
+      setSaveMessage(["Could not delete the user. Please contact the admin", "error"])
+      setOpenSnack(true);
+    } else {
+      setUniqueParticipants((prev) => 
+        prev.filter((participant) => participant.participantid != participantId)
+      );
+      // remove from dropdown list
+      setParticipantNames((prev) => 
+        prev.filter((participant) => participant.participantid != participantId)
       );
       setValue(null) // reset the autocomplete input
+      setSaveMessage(["Successfully removed", "success"])
+      setOpenSnack(true);
+    }
   };
 
   const handleAddedCheck = (participant) => {
@@ -313,7 +328,7 @@ const DynamicActivityForm = () => {
   // };
 
   const handleAddParticipant = async () => {
-    console.log(newParticipant, uniqueParticipants)
+    //console.log(newParticipant, uniqueParticipants)
     if (!newParticipant.surname || !newParticipant.firstname) return;
 
     const combinedName = `${newParticipant?.surname ?? ''} ${newParticipant?.firstname ?? ''} ${newParticipant?.othername ?? ''}`;
