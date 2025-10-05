@@ -101,6 +101,9 @@ const DynamicActivityForm = () => {
   const [openQRDialog, setOpenQRDialog] = useState(false);
   const [openPlaceholderDialog, setOpenPlaceholderDialog] = useState(false);
   const [addButtonShow, setAddButtonShow] = useState(false);
+
+  const [searchText, setSearchText] = useState("");
+  const [filteredParticipants, setFilteredParticipants] = useState([]);
   
   const todayDate = getTodayDate();
 
@@ -130,9 +133,9 @@ const DynamicActivityForm = () => {
           const data = datares.output //datares is a json object with format {error: ..., output: ...}. See apiUtils.js for reference
           if (data?.events) {
             setFormState(data);
-            //console.log(data.events)
-            //console.log(getUniqueParticipants(data.events))
+            //console.log(JSON.stringify(getUniqueParticipants(data.events)))
             setUniqueParticipants(getUniqueParticipants(data.events));
+            setFilteredParticipants(getUniqueParticipants(data.events))
             setHighlightedDays(getHightlightedDays(data.events));
             //saveToLocalStorage("formData", data); // Store data from server in local storage
             saveToLocalStorage(slugid, data); // Store data from server in local storage
@@ -213,6 +216,13 @@ const DynamicActivityForm = () => {
     return () => clearInterval(interval); // Cleanup on unmount
   }, [session]);
 
+  useEffect(() => {
+    const filtered = uniqueParticipants.filter((participant) =>
+      participant.participantname.toLowerCase().includes(searchText.toLowerCase())
+    );
+    setFilteredParticipants(filtered);
+  }, [uniqueParticipants, searchText]); // Re-run filter when uniqueParticipants or searchText changes
+
 
   const processOutbox = async () => {
     const outbox = getFromOutbox() || [];
@@ -223,13 +233,25 @@ const DynamicActivityForm = () => {
       }
     }
   };
+  
+  const handleSearch = (e) => {
+    const text = e.target.value;
+    setSearchText(text);
+    // const filtered = uniqueParticipants.filter((participant) =>
+    //   participant.participantname.toLowerCase().includes(text.toLowerCase())
+    // );
+    // setFilteredParticipants(searchText ? filtered : uniqueParticipants);
+  };
 
-  const handleDeleteParticipant = async (participantId) => {
+
+  const handleDeleteParticipant = async (p) => {
+    const participantId = p.participantid
     const data = {tempid: participantId}
+    //const deltype = p.originalid ? "participant" : "placeholder";
     const response = await sendDataToServer(`${BACKEND_URL}/api/delete/placeholder/`, data, session.accessToken);
     if (response.error) {
       //console.log(response)
-      setSaveMessage(["Could not delete the user. Please contact the admin", "error"])
+      setSaveMessage(["Could not delete the participant. Please contact the admin.", "error"])
       setOpenSnack(true);
     } else {
       setUniqueParticipants((prev) => 
@@ -435,7 +457,7 @@ const DynamicActivityForm = () => {
             return [`${deleted} successfully removed`, alert]
           }
         }*/
-        return [`Changes made successfully`, alert]
+        return [`Changes made successfully!`, alert]
       }
     }
   }
@@ -581,10 +603,28 @@ const DynamicActivityForm = () => {
             />
           </LocalizationProvider>
         </div>
+        <div className="w-full max-w-md mx-auto">
+          <input
+            value={searchText}
+            onChange={handleSearch}
+            placeholder="Search by participant name..."
+            className="search-input"
+          />
+        </div>
+        {/* {filteredParticipants.length > 0 ? (
+            filteredParticipants.map((participant) => (
+              <li key={participant.participantid} className="mb-2">
+                {participant.participantname}
+              </li>
+            ))
+          ) : (
+            <li>No participants found.</li>
+          )} */}
 
         <div className='list-box'>
           {/*JSON.stringify(uniqueParticipants)*/}
-          {uniqueParticipants.map((participant) => (
+          {//uniqueParticipants.map((participant) => (
+            filteredParticipants.map((participant) => (
             <div key={participant.participantid} className={`${'list-item'}`}>
               <label 
                 key={participant.participantid} 
@@ -602,10 +642,10 @@ const DynamicActivityForm = () => {
                 />
               </label>
               {
-                handleAddedCheck(participant)
+                handleAddedCheck(participant) && !participant.originalid // show the delete button only for placeholders
                 ? <button
                     type="button"
-                    onClick={() => handleDeleteParticipant(participant.participantid)}
+                    onClick={() => handleDeleteParticipant(participant)}
                     className="delete-button"
                   >
                   X
@@ -614,7 +654,7 @@ const DynamicActivityForm = () => {
               }
             </div>
           ))}
-          {isOnline() && 
+          {isOnline() && !searchText &&
           <><Autocomplete
             value={value || null}
             onChange={(event, newValue) => {

@@ -294,6 +294,20 @@
   background-color: #e1e1e1;
 }
 
+.search-input {
+  width: 100%; /* w-full */
+  display: block; /* block */
+  border: none; /* border-0 */
+  border-bottom: 1px solid #d1d5db; /* border-b border-gray-300 */
+  padding: 0; /* p-0 */
+  outline: none; /* Remove default focus outline */
+}
+
+.search-input:focus {
+  box-shadow: none; /* focus:ring-0 */
+  border-bottom-color: #6b7280; /* focus:border-gray-500 */
+}
+
 
 @media (max-width: 991px) {
     .main-panel > .content {
